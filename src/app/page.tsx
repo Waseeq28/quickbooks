@@ -13,8 +13,49 @@ export default function InvoiceManagement() {
   const [isLoadingInvoices, setIsLoadingInvoices] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
-  // Real AI SDK useChat hook
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat()
+  // AI SDK useChat hook with tool result handling
+  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+    onToolCall: ({ toolCall }) => {
+      // Show loading state when AI tools are being executed
+      if (toolCall.toolName === 'fetchAllInvoices') {
+        setIsLoadingInvoices(true)
+        setError(null)
+      }
+    },
+    onFinish: (message) => {
+      // Handle tool results and update invoice panel
+      if (message.toolInvocations) {
+        for (const toolInvocation of message.toolInvocations) {
+          if (toolInvocation.toolName === 'fetchAllInvoices' && 'result' in toolInvocation) {
+            const result = toolInvocation.result as any
+            
+            if (result.success && result.invoices) {
+              // Update invoices from AI tool result
+              setInvoices(result.invoices)
+              setSelectedInvoice(result.invoices[0] || null)
+              setError(null)
+              console.log('AI Tool Result: Updated invoice panel with', result.invoices.length, 'invoices')
+            } else if (!result.success) {
+              // Handle AI tool errors
+              setError(result.message || 'Failed to fetch invoices via AI')
+              console.error('AI Tool Error:', result)
+            }
+            
+            setIsLoadingInvoices(false)
+          }
+          
+          if (toolInvocation.toolName === 'getInvoice' && 'result' in toolInvocation) {
+            const result = toolInvocation.result as any
+            
+            if (result.success && result.invoice) {
+              // If a specific invoice was fetched, you could highlight it or show details
+              console.log('AI Tool Result: Retrieved specific invoice', result.invoice)
+            }
+          }
+        }
+      }
+    }
+  })
 
   const handleInvoiceSelect = (invoice: SimpleInvoice) => {
     setSelectedInvoice(invoice)
@@ -39,32 +80,29 @@ export default function InvoiceManagement() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="h-screen flex flex-col bg-background">
       <Header />
-      <div className="flex flex-1 overflow-hidden">
-        <div className="flex flex-1 divide-x divide-border">
-          {/* Invoice Panel */}
-          <div className="flex-1 min-w-0">
-            <InvoicePanel
-              invoices={invoices}
-              selectedInvoice={selectedInvoice}
-              onInvoiceSelect={handleInvoiceSelect}
-              isLoading={isLoadingInvoices}
-              onFetchInvoices={fetchInvoices}
-              error={error}
-            />
-          </div>
-
-          {/* Chat Panel */}
-          <div className="flex-1 min-w-0">
-            <ChatPanel
-              messages={messages}
-              input={input}
-              handleInputChange={handleInputChange}
-              handleSubmit={handleSubmit}
-              isLoading={isLoading}
-            />
-          </div>
+      <div className="flex-1 flex overflow-hidden">
+        {/* Invoice Panel */}
+        <div className="flex-1">
+          <InvoicePanel
+            invoices={invoices}
+            selectedInvoice={selectedInvoice}
+            onInvoiceSelect={handleInvoiceSelect}
+            isLoading={isLoadingInvoices}
+            onFetchInvoices={fetchInvoices}
+            error={error}
+          />
+        </div>
+        {/* Chat Panel */}
+        <div className="w-[700px] border-l border-border/40">
+          <ChatPanel
+            messages={messages}
+            input={input}
+            handleInputChange={handleInputChange}
+            handleSubmit={handleSubmit}
+            isLoading={isLoading}
+          />
         </div>
       </div>
     </div>
