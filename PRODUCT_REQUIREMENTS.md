@@ -9,6 +9,16 @@ The application will consist of:
 - AI tools built with Vercel AI SDK
 - A React-based UI with dual panels
 
+## Tech Stack
+The following technologies are recommended for building the application:
+- **Frontend Framework:** Next.js (with React)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **AI/LLM Integration:** Vercel AI SDK
+- **Schema Validation:** Zod
+- **Accounting API:** QuickBooks Online API
+- **Deployment:** Vercel
+
 ## Vercel AI SDK Tool Implementation
 
 ### Creating Tools with AI SDK
