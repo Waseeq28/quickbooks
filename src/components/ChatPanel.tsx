@@ -106,7 +106,15 @@ export function ChatPanel({
             )}
 
             {/* Messages */}
-            {messages.map((message) => (
+            {messages
+              .filter((message) => {
+                // Filter out empty messages or messages with no content
+                if (typeof message.content === 'string') {
+                  return message.content.trim().length > 0
+                }
+                return message.content !== null && message.content !== undefined
+              })
+              .map((message) => (
               <div
                 key={message.id}
                 className={`flex gap-3 ${
