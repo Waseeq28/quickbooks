@@ -36,7 +36,7 @@ const invoiceTools = {
   getInvoice: tool({
     description: 'Get details of a specific invoice by ID from QuickBooks Online. Use this when the user asks for details about a specific invoice.',
     parameters: z.object({
-      invoiceId: z.string().describe('The ID of the invoice to retrieve'),
+      invoiceId: z.string().describe('The exact ID of the invoice to retrieve'),
     }),
     execute: async ({ invoiceId }) => {
       try {
@@ -46,20 +46,20 @@ const invoiceTools = {
           return {
             success: false,
             error: 'Invoice not found',
-            message: `Invoice with ID ${invoiceId} was not found in QuickBooks`
+            message: `Invoice with ID "${invoiceId}" was not found in QuickBooks.`
           };
         }
 
         return {
           success: true,
-          message: `Successfully retrieved invoice ${invoiceId}`,
+          message: `Found and selected invoice ${invoiceId}.`,
           invoice: rawInvoice
         };
       } catch (error: any) {
         return {
           success: false,
           error: 'Failed to fetch invoice from QuickBooks',
-          message: error.message || `Unknown error occurred while fetching invoice ${invoiceId}`
+          message: `Could not retrieve invoice "${invoiceId}". ${error.message || 'Please check the invoice ID and try again.'}`
         };
       }
     },
@@ -79,12 +79,15 @@ export async function POST(req: Request) {
 
 You can help users with their QuickBooks invoices by:
 - Fetching all invoices from QuickBooks Online
-- Getting details of specific invoices by ID
-- Answering questions about invoice data
-- Assisting with invoice-related tasks
+- Getting details of specific invoices by ID and selecting them in the interface
+- Answering questions about invoice data when specifically asked
 
-When a user asks to see, fetch, get, or retrieve invoices, use the fetchAllInvoices tool.
-When a user asks about a specific invoice, use the getInvoice tool with the invoice ID.`,
+When a user asks to see, fetch, get, or retrieve invoices, use the fetchAllInvoices tool and only mention the total number of invoices fetched.
+When a user asks about a specific invoice by ID, use the getInvoice tool with the exact invoice ID. This will select the invoice in the interface if found.
+
+If an invoice is not found, simply state that it was not found - do not try to find alternative invoices.
+Only provide insights, summaries, or analysis when specifically asked by the user.
+Keep responses brief and to the point.`,
   });
 
   return result.toDataStreamResponse();
