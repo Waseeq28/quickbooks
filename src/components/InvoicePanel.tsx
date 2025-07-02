@@ -7,31 +7,26 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
-import { Search, DollarSign, Calendar, User, FileText, Mail, Download } from "lucide-react"
-
-export interface Invoice {
-  id: string
-  customerName: string
-  amount: number
-  status: "paid" | "pending" | "overdue"
-  dueDate: string
-  issueDate: string
-  items: Array<{
-    description: string
-    quantity: number
-    rate: number
-    amount: number
-  }>
-}
+import { Search, DollarSign, Calendar, User, FileText, Mail, Download, RefreshCw, AlertTriangle } from "lucide-react"
+import { SimpleInvoice } from "@/types/quickbooks"
 
 interface InvoicePanelProps {
-  invoices: Invoice[]
-  selectedInvoice?: Invoice
-  onInvoiceSelect: (invoice: Invoice) => void
+  invoices: SimpleInvoice[]
+  selectedInvoice: SimpleInvoice | null
+  onInvoiceSelect: (invoice: SimpleInvoice) => void
   isLoading: boolean
+  onFetchInvoices: () => Promise<void>
+  error: string | null
 }
 
-export function InvoicePanel({ invoices, selectedInvoice, onInvoiceSelect, isLoading }: InvoicePanelProps) {
+export function InvoicePanel({ 
+  invoices, 
+  selectedInvoice, 
+  onInvoiceSelect, 
+  isLoading, 
+  onFetchInvoices,
+  error 
+}: InvoicePanelProps) {
   const [searchTerm, setSearchTerm] = useState("")
 
   const filteredInvoices = invoices.filter(
@@ -40,7 +35,7 @@ export function InvoicePanel({ invoices, selectedInvoice, onInvoiceSelect, isLoa
       invoice.id.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  const getStatusColor = (status: Invoice["status"]) => {
+  const getStatusColor = (status: SimpleInvoice["status"]) => {
     switch (status) {
       case "paid":
         return "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
@@ -62,9 +57,10 @@ export function InvoicePanel({ invoices, selectedInvoice, onInvoiceSelect, isLoa
             <h2 className="text-lg font-semibold tracking-tight">Invoices</h2>
             <p className="text-sm text-muted-foreground">Manage your invoice collection</p>
           </div>
-          <Badge variant="secondary" className="text-xs">
-            {filteredInvoices.length} total
-          </Badge>
+          <Button onClick={onFetchInvoices} disabled={isLoading} size="sm" variant="outline" className="gap-2">
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>{isLoading ? 'Fetching...' : 'Fetch Invoices'}</span>
+          </Button>
         </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -77,11 +73,26 @@ export function InvoicePanel({ invoices, selectedInvoice, onInvoiceSelect, isLoa
         </div>
       </div>
 
-      <div className="flex-1 flex">
+      <div className="flex flex-1 overflow-hidden">
         {/* Invoice List Sidebar */}
-        <div className="w-80 border-r border-border/40">
-          <ScrollArea className="h-full">
+        <div className="w-80 border-r border-border/40 flex flex-col overflow-hidden">
+          <ScrollArea className="flex-1 h-0">
             <div className="p-4 space-y-3">
+              {error && (
+                <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>{error}</span>
+                </div>
+              )}
+              {!isLoading && !error && invoices.length === 0 && (
+                <div className="text-center p-6">
+                  <FileText className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
+                  <h3 className="font-semibold text-muted-foreground">No Invoices Found</h3>
+                  <p className="text-sm text-muted-foreground/80 mt-1">
+                    Try fetching again or create an invoice in QuickBooks.
+                  </p>
+                </div>
+              )}
               {filteredInvoices.map((invoice) => (
                 <Card
                   key={invoice.id}
@@ -115,19 +126,18 @@ export function InvoicePanel({ invoices, selectedInvoice, onInvoiceSelect, isLoa
         </div>
 
         {/* Invoice Details */}
-        <div className="flex-1 bg-background/50">
+        <div className="flex-1 bg-background/50 overflow-hidden">
           <ScrollArea className="h-full">
-           {selectedInvoice && (
-            <div className="p-6">
-              {isLoading && (
-                <div className="mb-6 p-4 bg-blue-50/50 border border-blue-200/50 rounded-lg backdrop-blur-sm">
-                  <div className="flex items-center space-x-3">
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
-                    <span className="text-sm text-blue-800 font-medium">Processing invoice operation...</span>
-                  </div>
+           {isLoading && (
+              <div className="flex items-center justify-center h-full">
+                <div className="flex items-center space-x-3 text-muted-foreground">
+                  <RefreshCw className="h-5 w-5 animate-spin" />
+                  <span>Loading invoices...</span>
                 </div>
-              )}
-
+              </div>
+           )}
+           {!isLoading && selectedInvoice ? (
+            <div className="p-6">
               <Card className="border-border/50 shadow-sm">
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
@@ -230,6 +240,17 @@ export function InvoicePanel({ invoices, selectedInvoice, onInvoiceSelect, isLoa
                   </div>
                 </CardContent>
               </Card>
+            </div>
+           ) : null}
+           {!isLoading && !selectedInvoice && (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center p-8">
+                <FileText className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
+                <h3 className="text-lg font-semibold text-muted-foreground">No Invoice Selected</h3>
+                <p className="text-sm text-muted-foreground/80 mt-1">
+                  {invoices.length > 0 ? 'Select an invoice from the list to view its details.' : 'Fetch invoices to get started.'}
+                </p>
+              </div>
             </div>
            )}
           </ScrollArea>

@@ -49,7 +49,6 @@ export class QuickBooksService {
             reject(err)
           } else {
             const invoices = data?.QueryResponse?.Invoice || []
-            console.log(`Found ${invoices.length} invoices`)
             resolve(invoices)
           }
         })
