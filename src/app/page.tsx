@@ -37,44 +37,41 @@ export default function InvoiceManagement() {
     },
     onFinish: (message) => {
       // Handle tool results and update invoice panel
-      if (message.parts) {
-        for (const part of message.parts) {
-          if (part.type === 'tool-invocation' && 'result' in part) {
-            const toolPart = part as any
-            if (toolPart.toolName === 'fetchAllInvoices') {
-              const result = toolPart.result
-              
-              if (result.success && result.invoices) {
-                // Update invoices from AI tool result
-                setInvoices(result.invoices)
-                setSelectedInvoice(result.invoices[0] || null)
-                setError(null)
-              } else if (!result.success) {
-                // Handle AI tool errors
-                setError(result.message || 'Failed to fetch invoices via AI')
-              }
-              
-              setIsLoadingInvoices(false)
+      if (message.toolInvocations) {
+        for (const toolInvocation of message.toolInvocations) {
+          if (toolInvocation.toolName === 'fetchAllInvoices' && 'result' in toolInvocation) {
+            const result = toolInvocation.result as any
+            
+            if (result.success && result.invoices) {
+              // Update invoices from AI tool result
+              setInvoices(result.invoices)
+              setSelectedInvoice(result.invoices[0] || null)
+              setError(null)
+            } else if (!result.success) {
+              // Handle AI tool errors
+              setError(result.message || 'Failed to fetch invoices via AI')
             }
             
-            if (toolPart.toolName === 'getInvoice') {
-              const result = toolPart.result
+            setIsLoadingInvoices(false)
+          }
+          
+          if (toolInvocation.toolName === 'getInvoice' && 'result' in toolInvocation) {
+            const result = toolInvocation.result as any
+            
+            if (result.success && result.invoice) {
+              // Transform the raw QB invoice to simplified format
+              const simplifiedInvoice = transformQBInvoiceToSimple(result.invoice)
               
-              if (result.success && result.invoice) {
-                // Transform the raw QB invoice to simplified format
-                const simplifiedInvoice = transformQBInvoiceToSimple(result.invoice)
-                
-                // Check if this invoice is already in our list
-                const existingInvoice = invoices.find(inv => inv.id === simplifiedInvoice.id)
-                
-                if (existingInvoice) {
-                  // Select the existing invoice immediately
-                  setSelectedInvoice(existingInvoice)
-                } else {
-                  // Add the new invoice to the list and mark for pending selection
-                  setInvoices(prev => [...prev, simplifiedInvoice])
-                  setPendingInvoiceSelection(simplifiedInvoice.id)
-                }
+              // Check if this invoice is already in our list
+              const existingInvoice = invoices.find(inv => inv.id === simplifiedInvoice.id)
+              
+              if (existingInvoice) {
+                // Select the existing invoice immediately
+                setSelectedInvoice(existingInvoice)
+              } else {
+                // Add the new invoice to the list and mark for pending selection
+                setInvoices(prev => [...prev, simplifiedInvoice])
+                setPendingInvoiceSelection(simplifiedInvoice.id)
               }
             }
           }

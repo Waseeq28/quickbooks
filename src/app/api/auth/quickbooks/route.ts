@@ -22,8 +22,6 @@ export async function GET() {
     authUrl.searchParams.append('response_type', 'code')
     authUrl.searchParams.append('state', state)
 
-    console.log('Redirecting to QuickBooks OAuth:', authUrl.toString())
-
     const response = NextResponse.redirect(authUrl.toString())
 
     response.cookies.set('qb_oauth_state', state, {
@@ -34,7 +32,6 @@ export async function GET() {
 
     return response
   } catch (error: any) {
-    console.error('OAuth initiation error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 } 

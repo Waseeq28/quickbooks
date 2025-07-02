@@ -24,11 +24,8 @@ export class QuickBooksService {
     return new Promise((resolve, reject) => {
       this.qbo.refreshAccessToken((err: any, authResponse: any) => {
         if (err) {
-          console.error('Failed to refresh access token:', err.message)
           return reject(err)
         }
-        
-        console.log('Successfully refreshed access token.')
         
         // The library automatically updates the qbo instance with the new token
         // but you could manually update them if needed from authResponse.getJson()
@@ -45,7 +42,6 @@ export class QuickBooksService {
       return new Promise((resolve, reject) => {
         this.qbo.findInvoices((err: any, data: any) => {
           if (err) {
-            console.error('Error fetching invoices:', err)
             reject(err)
           } else {
             const invoices = data?.QueryResponse?.Invoice || []
@@ -54,7 +50,6 @@ export class QuickBooksService {
         })
       })
     } catch (error) {
-      console.error('Error in getInvoices:', error)
       throw error
     }
   }
@@ -66,7 +61,6 @@ export class QuickBooksService {
       return new Promise((resolve, reject) => {
         this.qbo.getInvoice(invoiceId, (err: any, data: any) => {
           if (err) {
-            console.error('Error fetching invoice:', err)
             reject(err)
           } else {
             resolve(data)
@@ -74,7 +68,6 @@ export class QuickBooksService {
         })
       })
     } catch (error) {
-      console.error('Error in getInvoice:', error)
       throw error
     }
   }
@@ -86,7 +79,6 @@ export class QuickBooksService {
       return new Promise((resolve, reject) => {
         this.qbo.updateInvoice(invoice, (err: any, data: any) => {
           if (err) {
-            console.error('Error updating invoice:', err)
             reject(err)
           } else {
             resolve(data)
@@ -94,7 +86,6 @@ export class QuickBooksService {
         })
       })
     } catch (error) {
-      console.error('Error in updateInvoice:', error)
       throw error
     }
   }
@@ -106,7 +97,6 @@ export class QuickBooksService {
       return new Promise((resolve, reject) => {
         this.qbo.sendInvoicePdf(invoiceId, emailAddress, (err: any, data: any) => {
           if (err) {
-            console.error('Error sending invoice email:', err)
             reject(err)
           } else {
             resolve(data)
@@ -114,7 +104,6 @@ export class QuickBooksService {
         })
       })
     } catch (error) {
-      console.error('Error in sendInvoiceEmail:', error)
       throw error
     }
   }
