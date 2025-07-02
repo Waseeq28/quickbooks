@@ -3,8 +3,6 @@ import { qbService } from '@/lib/quickbooks'
 
 export async function GET() {
   try {
-    console.log('Testing QuickBooks connection...')
-    
     // A successful call to getInvoices serves as a connection test.
     const invoices = await qbService.getInvoices()
     
@@ -19,8 +17,6 @@ export async function GET() {
     })
 
   } catch (error: any) {
-    console.error('QuickBooks test error:', error)
-    
     // If getInvoices fails, the connection is considered failed.
     return NextResponse.json(
       { 

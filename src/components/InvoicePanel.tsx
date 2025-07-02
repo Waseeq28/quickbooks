@@ -7,32 +7,31 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
-import { Search, DollarSign, Calendar, User, FileText, Mail, Download } from "lucide-react"
-
-export interface Invoice {
-  id: string
-  customerName: string
-  amount: number
-  status: "paid" | "pending" | "overdue"
-  dueDate: string
-  issueDate: string
-  items: Array<{
-    description: string
-    quantity: number
-    rate: number
-    amount: number
-  }>
-}
+import { Search, DollarSign, Calendar, User, FileText, Mail, Download, RefreshCw, AlertTriangle, Check } from "lucide-react"
+import { SimpleInvoice } from "@/types/quickbooks"
 
 interface InvoicePanelProps {
-  invoices: Invoice[]
-  selectedInvoice?: Invoice
-  onInvoiceSelect: (invoice: Invoice) => void
+  invoices: SimpleInvoice[]
+  selectedInvoice: SimpleInvoice | null
+  onInvoiceSelect: (invoice: SimpleInvoice) => void
   isLoading: boolean
+  onFetchInvoices: () => Promise<void>
+  error: string | null
 }
 
-export function InvoicePanel({ invoices, selectedInvoice, onInvoiceSelect, isLoading }: InvoicePanelProps) {
+export function InvoicePanel({ 
+  invoices, 
+  selectedInvoice, 
+  onInvoiceSelect, 
+  isLoading, 
+  onFetchInvoices,
+  error 
+}: InvoicePanelProps) {
   const [searchTerm, setSearchTerm] = useState("")
+  const [emailToSend, setEmailToSend] = useState("")
+  const [isSendingEmail, setIsSendingEmail] = useState(false)
+  const [sendEmailError, setSendEmailError] = useState<string | null>(null)
+  const [sendEmailSuccess, setSendEmailSuccess] = useState<string | null>(null)
 
   const filteredInvoices = invoices.filter(
     (invoice) =>
@@ -40,7 +39,7 @@ export function InvoicePanel({ invoices, selectedInvoice, onInvoiceSelect, isLoa
       invoice.id.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  const getStatusColor = (status: Invoice["status"]) => {
+  const getStatusColor = (status: SimpleInvoice["status"]) => {
     switch (status) {
       case "paid":
         return "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
@@ -53,6 +52,82 @@ export function InvoicePanel({ invoices, selectedInvoice, onInvoiceSelect, isLoa
     }
   }
 
+  const handleDownloadPdf = async (invoiceId: string) => {
+    try {
+      const response = await fetch(`/api/quickbooks/invoices/${invoiceId}/pdf`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to download PDF')
+      }
+
+      // Get the PDF blob
+      const blob = await response.blob()
+      
+      // Create a download link
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.style.display = 'none'
+      a.href = url
+      a.download = `invoice-${invoiceId}.pdf`
+      
+      // Trigger download
+      document.body.appendChild(a)
+      a.click()
+      
+      // Cleanup
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error('Error downloading PDF:', error)
+      // You could add a toast notification here
+    }
+  }
+
+  const handleInvoiceSelection = (invoice: SimpleInvoice) => {
+    onInvoiceSelect(invoice)
+    // Reset state when a new invoice is selected
+    setEmailToSend("")
+    setSendEmailError(null)
+    setSendEmailSuccess(null)
+  }
+
+  const handleSendEmail = async (invoiceId: string) => {
+    if (!emailToSend) {
+      setSendEmailError("Please enter a recipient's email address.")
+      return
+    }
+
+    setIsSendingEmail(true)
+    setSendEmailError(null)
+    setSendEmailSuccess(null)
+
+    try {
+      const response = await fetch(`/api/quickbooks/invoices/${invoiceId}/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailToSend }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to send email');
+      }
+      
+      setSendEmailSuccess(result.message || "Email sent successfully!")
+      setEmailToSend("")
+    } catch (error: any) {
+      setSendEmailError(error.message)
+    } finally {
+      setIsSendingEmail(false)
+      // Clear messages after a few seconds
+      setTimeout(() => {
+        setSendEmailError(null)
+        setSendEmailSuccess(null)
+      }, 5000)
+    }
+  }
+
   return (
     <div className="flex flex-col h-full bg-card">
       {/* Header */}
@@ -62,9 +137,10 @@ export function InvoicePanel({ invoices, selectedInvoice, onInvoiceSelect, isLoa
             <h2 className="text-lg font-semibold tracking-tight">Invoices</h2>
             <p className="text-sm text-muted-foreground">Manage your invoice collection</p>
           </div>
-          <Badge variant="secondary" className="text-xs">
-            {filteredInvoices.length} total
-          </Badge>
+          <Button onClick={onFetchInvoices} disabled={isLoading} size="sm" variant="outline" className="gap-2">
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>{isLoading ? 'Fetching...' : 'Fetch Invoices'}</span>
+          </Button>
         </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -77,11 +153,26 @@ export function InvoicePanel({ invoices, selectedInvoice, onInvoiceSelect, isLoa
         </div>
       </div>
 
-      <div className="flex-1 flex">
+      <div className="flex flex-1 overflow-hidden">
         {/* Invoice List Sidebar */}
-        <div className="w-80 border-r border-border/40">
-          <ScrollArea className="h-full">
+        <div className="w-80 border-r border-border/40 flex flex-col overflow-hidden">
+          <ScrollArea className="flex-1 h-0">
             <div className="p-4 space-y-3">
+              {error && (
+                <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>{error}</span>
+                </div>
+              )}
+              {!isLoading && !error && invoices.length === 0 && (
+                <div className="text-center p-6">
+                  <FileText className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
+                  <h3 className="font-semibold text-muted-foreground">No Invoices Found</h3>
+                  <p className="text-sm text-muted-foreground/80 mt-1">
+                    Try fetching again or create an invoice in QuickBooks.
+                  </p>
+                </div>
+              )}
               {filteredInvoices.map((invoice) => (
                 <Card
                   key={invoice.id}
@@ -90,7 +181,7 @@ export function InvoicePanel({ invoices, selectedInvoice, onInvoiceSelect, isLoa
                       ? "ring-2 ring-primary shadow-md bg-accent/30" 
                       : "hover:bg-accent/20"
                   }`}
-                  onClick={() => onInvoiceSelect(invoice)}
+                  onClick={() => handleInvoiceSelection(invoice)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-3">
@@ -115,19 +206,18 @@ export function InvoicePanel({ invoices, selectedInvoice, onInvoiceSelect, isLoa
         </div>
 
         {/* Invoice Details */}
-        <div className="flex-1 bg-background/50">
+        <div className="flex-1 bg-background/50 overflow-hidden">
           <ScrollArea className="h-full">
-           {selectedInvoice && (
-            <div className="p-6">
-              {isLoading && (
-                <div className="mb-6 p-4 bg-blue-50/50 border border-blue-200/50 rounded-lg backdrop-blur-sm">
-                  <div className="flex items-center space-x-3">
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
-                    <span className="text-sm text-blue-800 font-medium">Processing invoice operation...</span>
-                  </div>
+           {isLoading && (
+              <div className="flex items-center justify-center h-full">
+                <div className="flex items-center space-x-3 text-muted-foreground">
+                  <RefreshCw className="h-5 w-5 animate-spin" />
+                  <span>Loading invoices...</span>
                 </div>
-              )}
-
+              </div>
+           )}
+           {!isLoading && selectedInvoice ? (
+            <div className="p-6">
               <Card className="border-border/50 shadow-sm">
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
@@ -169,9 +259,11 @@ export function InvoicePanel({ invoices, selectedInvoice, onInvoiceSelect, isLoa
                         </div>
                         <span>Total Amount</span>
                       </div>
-                      <p className="font-bold text-2xl text-foreground">${selectedInvoice.amount.toFixed(2)}</p>
+                      <span className="font-semibold text-foreground">${selectedInvoice.amount.toFixed(2)}</span>
                     </div>
                   </div>
+
+                  <Separator className="bg-border/40" />
 
                   {/* Dates */}
                   <div className="grid grid-cols-2 gap-6">
@@ -215,21 +307,72 @@ export function InvoicePanel({ invoices, selectedInvoice, onInvoiceSelect, isLoa
                     </div>
                   </div>
 
-                  <Separator />
-
                   {/* Actions */}
-                  <div className="flex flex-wrap gap-3">
-                    <Button variant="default" size="sm" className="shadow-sm">
-                      <Mail className="h-4 w-4 mr-2" />
-                      Send Email
-                    </Button>
-                    <Button variant="outline" size="sm" className="border-border/50">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download PDF
-                    </Button>
+                  <div className="pt-6 space-y-3">
+                    <div className="flex items-end gap-2">
+                      <div className="flex-grow">
+                        <label htmlFor="emailForInvoice" className="text-xs font-medium text-muted-foreground pl-1">
+                          Send invoice to email
+                        </label>
+                        <Input
+                          id="emailForInvoice"
+                          type="email"
+                          placeholder="recipient@example.com"
+                          value={emailToSend}
+                          onChange={(e) => setEmailToSend(e.target.value)}
+                          disabled={isSendingEmail}
+                          className="bg-background/50 border-border/50 focus:bg-background mt-1"
+                        />
+                      </div>
+                      
+                      <Button
+                        onClick={() => handleSendEmail(selectedInvoice.id)}
+                        disabled={isSendingEmail || !emailToSend || !!sendEmailSuccess}
+                        className="gap-2 w-32"
+                      >
+                        {isSendingEmail ? (
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                        ) : sendEmailSuccess ? (
+                          <Check className="h-4 w-4" />
+                        ) : (
+                          <Mail className="h-4 w-4" />
+                        )}
+                        <span>
+                          {isSendingEmail
+                            ? 'Sending...'
+                            : sendEmailSuccess
+                            ? 'Sent!'
+                            : 'Send'}
+                        </span>
+                      </Button>
+
+                      <Button 
+                        onClick={() => handleDownloadPdf(selectedInvoice.id)}
+                        variant="outline"
+                        className="gap-2 w-32"
+                      >
+                        <Download className="h-4 w-4" />
+                        <span>Download</span>
+                      </Button>
+                    </div>
+                    <div className="h-4">
+                      {sendEmailError && <p className="text-sm text-red-600 pl-1">{sendEmailError}</p>}
+                      {sendEmailSuccess && <p className="text-sm text-emerald-600 pl-1">{sendEmailSuccess}</p>}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
+            </div>
+           ) : null}
+           {!isLoading && !selectedInvoice && (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center p-8">
+                <FileText className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
+                <h3 className="text-lg font-semibold text-muted-foreground">No Invoice Selected</h3>
+                <p className="text-sm text-muted-foreground/80 mt-1">
+                  {invoices.length > 0 ? 'Select an invoice from the list to view its details.' : 'Fetch invoices to get started.'}
+                </p>
+              </div>
             </div>
            )}
           </ScrollArea>

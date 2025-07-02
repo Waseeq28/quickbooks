@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
     const storedState = request.cookies.get('qb_oauth_state')?.value
 
     if (error) {
-      console.error('OAuth error:', error)
       return new Response(`
         <html>
           <body>
@@ -47,8 +46,6 @@ export async function GET(request: NextRequest) {
       `, { headers: { 'Content-Type': 'text/html' } })
     }
 
-    console.log('OAuth callback received:', { code: code.substring(0, 20) + '...', realmId })
-
     // Exchange code for tokens
     const tokenResponse = await fetch('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer', {
       method: 'POST',
@@ -65,12 +62,10 @@ export async function GET(request: NextRequest) {
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text()
-      console.error('Token exchange failed:', errorText)
       throw new Error(`Token exchange failed: ${tokenResponse.status}`)
     }
 
     const tokens = await tokenResponse.json()
-    console.log('Tokens received successfully')
 
     // Display tokens for user to copy to .env.local
     const responseHtml = `
@@ -138,7 +133,6 @@ QB_REALM_ID=${realmId}</div>
     return response
 
   } catch (error: any) {
-    console.error('OAuth callback error:', error)
     return new Response(`
       <html>
         <body>

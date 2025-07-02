@@ -12,7 +12,7 @@ export class QuickBooksService {
       false, // no token secret needed for OAuth 2.0
       process.env.QB_REALM_ID!,
       process.env.QB_ENVIRONMENT === 'sandbox', // true for sandbox
-      process.env.QB_DEBUG === 'true', // enable debug logging
+      false, // debug logging disabled
       null, // minor version (use default)
       '2.0', // oauth version
       process.env.QB_REFRESH_TOKEN!
@@ -24,11 +24,8 @@ export class QuickBooksService {
     return new Promise((resolve, reject) => {
       this.qbo.refreshAccessToken((err: any, authResponse: any) => {
         if (err) {
-          console.error('Failed to refresh access token:', err.message)
           return reject(err)
         }
-        
-        console.log('Successfully refreshed access token.')
         
         // The library automatically updates the qbo instance with the new token
         // but you could manually update them if needed from authResponse.getJson()
@@ -45,17 +42,14 @@ export class QuickBooksService {
       return new Promise((resolve, reject) => {
         this.qbo.findInvoices((err: any, data: any) => {
           if (err) {
-            console.error('Error fetching invoices:', err)
             reject(err)
           } else {
             const invoices = data?.QueryResponse?.Invoice || []
-            console.log(`Found ${invoices.length} invoices`)
             resolve(invoices)
           }
         })
       })
     } catch (error) {
-      console.error('Error in getInvoices:', error)
       throw error
     }
   }
@@ -67,7 +61,6 @@ export class QuickBooksService {
       return new Promise((resolve, reject) => {
         this.qbo.getInvoice(invoiceId, (err: any, data: any) => {
           if (err) {
-            console.error('Error fetching invoice:', err)
             reject(err)
           } else {
             resolve(data)
@@ -75,7 +68,6 @@ export class QuickBooksService {
         })
       })
     } catch (error) {
-      console.error('Error in getInvoice:', error)
       throw error
     }
   }
@@ -87,7 +79,6 @@ export class QuickBooksService {
       return new Promise((resolve, reject) => {
         this.qbo.updateInvoice(invoice, (err: any, data: any) => {
           if (err) {
-            console.error('Error updating invoice:', err)
             reject(err)
           } else {
             resolve(data)
@@ -95,7 +86,29 @@ export class QuickBooksService {
         })
       })
     } catch (error) {
-      console.error('Error in updateInvoice:', error)
+      throw error
+    }
+  }
+
+  // Delete invoice
+  async deleteInvoice(invoiceId: string, syncToken: string): Promise<any> {
+    try {
+      await this.refreshToken()
+      return new Promise((resolve, reject) => {
+        // For QuickBooks, we need to pass the invoice object with Id and SyncToken
+        const invoiceToDelete = {
+          Id: invoiceId,
+          SyncToken: syncToken
+        }
+        this.qbo.deleteInvoice(invoiceToDelete, (err: any, data: any) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(data)
+          }
+        })
+      })
+    } catch (error) {
       throw error
     }
   }
@@ -107,7 +120,6 @@ export class QuickBooksService {
       return new Promise((resolve, reject) => {
         this.qbo.sendInvoicePdf(invoiceId, emailAddress, (err: any, data: any) => {
           if (err) {
-            console.error('Error sending invoice email:', err)
             reject(err)
           } else {
             resolve(data)
@@ -115,7 +127,61 @@ export class QuickBooksService {
         })
       })
     } catch (error) {
-      console.error('Error in sendInvoiceEmail:', error)
+      throw error
+    }
+  }
+
+  // Get invoice PDF
+  async getInvoicePdf(invoiceId: string): Promise<Buffer> {
+    try {
+      await this.refreshToken()
+      return new Promise((resolve, reject) => {
+        this.qbo.getInvoicePdf(invoiceId, (err: any, data: any) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(data)
+          }
+        })
+      })
+    } catch (error) {
+      throw error
+    }
+  }
+
+  // Get all customers
+  async getCustomers(): Promise<any[]> {
+    try {
+      await this.refreshToken()
+      return new Promise((resolve, reject) => {
+        this.qbo.findCustomers((err: any, data: any) => {
+          if (err) {
+            reject(err)
+          } else {
+            const customers = data?.QueryResponse?.Customer || []
+            resolve(customers)
+          }
+        })
+      })
+    } catch (error) {
+      throw error
+    }
+  }
+
+  // Create a new invoice
+  async createInvoice(invoiceData: any): Promise<any> {
+    try {
+      await this.refreshToken()
+      return new Promise((resolve, reject) => {
+        this.qbo.createInvoice(invoiceData, (err: any, data: any) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(data)
+          }
+        })
+      })
+    } catch (error) {
       throw error
     }
   }
