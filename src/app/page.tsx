@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import type { FormEvent, ChangeEvent } from "react"
+import { useChat } from '@ai-sdk/react'
 import { InvoicePanel } from "@/components/InvoicePanel"
-import { ChatPanel, Message } from "@/components/ChatPanel"
+import { ChatPanel } from "@/components/ChatPanel"
 import { Header } from "@/components/Header"
 
 // Mock invoice data for UI demonstration
@@ -45,53 +45,12 @@ const mockInvoices = [
 
 export default function InvoiceManagement() {
   const [selectedInvoice, setSelectedInvoice] = useState(mockInvoices[0])
-  const [appIsLoading, setAppIsLoading] = useState(false)
   
-  // Mocking the useChat hook
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState("")
-  const [chatIsLoading, setChatIsLoading] = useState(false)
-
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setInput(e.target.value)
-  }
-
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (!input.trim()) return;
-
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input,
-    };
-    setMessages(prev => [...prev, newMessage]);
-    
-    const currentInput = input;
-    setInput("");
-    setChatIsLoading(true);
-
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: `This is a mock response to: "${currentInput}"`,
-      };
-      setMessages(prev => [...prev, aiResponse]);
-      setChatIsLoading(false);
-    }, 1500);
-  }
-  // End of useChat mock
+  // Real AI SDK useChat hook
+  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat()
 
   const handleInvoiceSelect = (invoice: (typeof mockInvoices)[0]) => {
     setSelectedInvoice(invoice)
-  }
-
-  const handleToolExecution = (toolName: string, args: any) => {
-    setAppIsLoading(true)
-    // UI feedback for tool execution
-    setTimeout(() => setAppIsLoading(false), 2000)
   }
 
   return (
@@ -105,7 +64,7 @@ export default function InvoiceManagement() {
               invoices={mockInvoices}
               selectedInvoice={selectedInvoice}
               onInvoiceSelect={handleInvoiceSelect}
-              isLoading={appIsLoading}
+              isLoading={false}
             />
           </div>
 
@@ -116,8 +75,7 @@ export default function InvoiceManagement() {
               input={input}
               handleInputChange={handleInputChange}
               handleSubmit={handleSubmit}
-              isLoading={chatIsLoading || appIsLoading}
-              onToolExecution={handleToolExecution}
+              isLoading={isLoading}
             />
           </div>
         </div>

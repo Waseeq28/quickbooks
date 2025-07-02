@@ -2,37 +2,21 @@
 
 import type React from "react"
 
-import { useState, useRef, useEffect } from "react"
+import { useRef, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Send, Bot, User, Loader2, Wrench, CheckCircle, AlertCircle } from "lucide-react"
-
-// Defined locally to avoid dependency on 'ai' package for UI-only implementation
-export interface Message {
-  id: string;
-  content: string;
-  role: "user" | "assistant";
-}
+import { Send, Bot, User, Loader2 } from "lucide-react"
+import type { UIMessage } from 'ai'
 
 interface ChatPanelProps {
-  messages: Message[]
+  messages: UIMessage[]
   input: string
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
+  handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void
   isLoading: boolean
-  onToolExecution: (toolName: string, args: any) => void
-}
-
-interface ToolCall {
-  id: string
-  name: string
-  args: any
-  status: "executing" | "completed" | "error"
-  result?: any
 }
 
 export function ChatPanel({
@@ -41,63 +25,21 @@ export function ChatPanel({
   handleInputChange,
   handleSubmit,
   isLoading,
-  onToolExecution,
 }: ChatPanelProps) {
-  const [toolCalls, setToolCalls] = useState<ToolCall[]>([])
   const scrollAreaRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight
     }
-  }, [messages, toolCalls])
+  }, [messages])
 
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-
-    if (input.toLowerCase().includes("invoice")) {
-      const mockToolCall: ToolCall = {
-        id: Date.now().toString(),
-        name: "getInvoice",
-        args: { invoiceId: "INV-001" },
-        status: "executing",
-      }
-      setToolCalls((prev) => [...prev, mockToolCall])
-      onToolExecution(mockToolCall.name, mockToolCall.args)
-
-      setTimeout(() => {
-        setToolCalls((prev) =>
-          prev.map((tc) =>
-            tc.id === mockToolCall.id ? { ...tc, status: "completed", result: { success: true } } : tc,
-          ),
-        )
-      }, 2000)
-    }
-
     handleSubmit(e)
   }
 
-  const getToolIcon = (status: ToolCall["status"]) => {
-    switch (status) {
-      case "executing":
-        return <Loader2 className="h-4 w-4 animate-spin" />
-      case "completed":
-        return <CheckCircle className="h-4 w-4 text-green-600" />
-      case "error":
-        return <AlertCircle className="h-4 w-4 text-red-600" />
-    }
-  }
 
-  const getToolStatusColor = (status: ToolCall["status"]) => {
-    switch (status) {
-      case "executing":
-        return "bg-blue-100 text-blue-800"
-      case "completed":
-        return "bg-green-100 text-green-800"
-      case "error":
-        return "bg-red-100 text-red-800"
-    }
-  }
 
   return (
     <div className="flex flex-col h-full bg-card">
@@ -127,7 +69,7 @@ export function ChatPanel({
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-foreground mb-3">
-                      Hello! I'm your AI assistant for invoice management. I can help you:
+                      Hello! I&apos;m your AI assistant for invoice management. I can help you:
                     </p>
                     <ul className="text-sm text-muted-foreground space-y-2">
                       <li className="flex items-center space-x-2">
@@ -173,7 +115,9 @@ export function ChatPanel({
                         : "bg-accent/50 text-foreground border border-border/30"
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                      {typeof message.content === 'string' ? message.content : JSON.stringify(message.content)}
+                    </p>
                   </div>
                   {message.role === "user" && (
                     <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-muted text-muted-foreground">
@@ -183,36 +127,7 @@ export function ChatPanel({
                 </div>
               ))}
 
-              {/* Tool Calls */}
-              {toolCalls.map((toolCall) => (
-                <div key={toolCall.id} className="flex items-start space-x-3">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-orange-100 text-orange-600">
-                    <Wrench className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1 p-4 bg-orange-50/50 border border-orange-200/50 rounded-xl backdrop-blur-sm">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-2">
-                        {getToolIcon(toolCall.status)}
-                        <span className="text-sm font-semibold text-foreground">Tool: {toolCall.name}</span>
-                      </div>
-                      <Badge 
-                        variant="secondary" 
-                        className={`${getToolStatusColor(toolCall.status)} border font-medium`}
-                      >
-                        {toolCall.status}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-1">
-                      <span className="font-medium">Arguments:</span> {JSON.stringify(toolCall.args)}
-                    </p>
-                    {toolCall.result && (
-                      <p className="text-xs text-muted-foreground">
-                        <span className="font-medium">Result:</span> {JSON.stringify(toolCall.result)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
+
 
               {/* Loading indicator */}
               {isLoading && (
@@ -255,7 +170,9 @@ export function ChatPanel({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleInputChange({ target: { value: "Show me all overdue invoices" } } as any)}
+                onClick={() => handleInputChange({ 
+                  target: { value: "Show me all overdue invoices" } 
+                } as React.ChangeEvent<HTMLInputElement>)}
                 disabled={isLoading}
               >
                 Overdue Invoices
@@ -263,7 +180,9 @@ export function ChatPanel({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleInputChange({ target: { value: "What is the total amount pending?" } } as any)}
+                onClick={() => handleInputChange({ 
+                  target: { value: "What is the total amount pending?" } 
+                } as React.ChangeEvent<HTMLInputElement>)}
                 disabled={isLoading}
               >
                 Pending Total
@@ -271,7 +190,9 @@ export function ChatPanel({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleInputChange({ target: { value: "Send reminder for INV-002" } } as any)}
+                onClick={() => handleInputChange({ 
+                  target: { value: "Send reminder for INV-002" } 
+                } as React.ChangeEvent<HTMLInputElement>)}
                 disabled={isLoading}
               >
                 Send Reminder
