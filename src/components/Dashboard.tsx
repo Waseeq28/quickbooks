@@ -24,85 +24,114 @@ export function Dashboard({ invoices }: DashboardProps) {
     }).format(amount)
   }
 
-  const stats = [
+  const revenueStats = [
     {
       title: "Total Revenue",
       value: formatCurrency(totalAmount),
       icon: TrendingUp,
-      solidBg: "bg-green-50",
-      iconBg: "bg-green-100",
-      iconColor: "text-green-600",
+      cardBg: "bg-gradient-to-br from-green-50 to-emerald-100",
+      iconBg: "bg-green-500",
+      iconColor: "text-white",
     },
     {
       title: "Outstanding",
       value: formatCurrency(totalDue),
       icon: DollarSign,
-      solidBg: "bg-amber-50",
-      iconBg: "bg-amber-100",
-      iconColor: "text-amber-600",
+      cardBg: "bg-gradient-to-br from-amber-50 to-orange-100",
+      iconBg: "bg-amber-500",
+      iconColor: "text-white",
     },
+  ]
+
+  const invoiceStatusData = [
     {
-      title: "Invoices",
-      value: totalInvoices,
-      icon: FileText,
-      solidBg: "bg-blue-50",
-      iconBg: "bg-blue-100",
-      iconColor: "text-blue-600",
-    },
-    {
-      title: "Paid",
-      value: paidCount,
+      label: "Paid",
+      count: paidCount,
       icon: CheckCircle,
-      solidBg: "bg-emerald-50",
-      iconBg: "bg-emerald-100",
-      iconColor: "text-emerald-600",
+      bgColor: "bg-green-100",
+      textColor: "text-green-700",
+      iconColor: "text-green-600",
     },
     {
-      title: "Pending",
-      value: pendingCount,
+      label: "Pending",
+      count: pendingCount,
       icon: Clock,
-      solidBg: "bg-purple-50",
-      iconBg: "bg-purple-100",
+      bgColor: "bg-purple-100",
+      textColor: "text-purple-700",
       iconColor: "text-purple-600",
     },
     {
-      title: "Overdue",
-      value: overdueCount,
+      label: "Overdue",
+      count: overdueCount,
       icon: AlertTriangle,
-      solidBg: "bg-red-50",
-      iconBg: "bg-red-100",
+      bgColor: "bg-red-100",
+      textColor: "text-red-700",
       iconColor: "text-red-600",
     },
   ]
 
   return (
     <div className="p-4 lg:p-6 bg-gray-50">
-      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-6">
-        {stats.map((stat, index) => (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/* Revenue Stats */}
+        {revenueStats.map((stat, index) => (
           <Card 
             key={stat.title} 
-            className="group hover:scale-[1.02] cursor-pointer relative overflow-hidden border-0 shadow-md"
+            className={`group hover:scale-[1.02] cursor-pointer border-0 shadow-lg ${stat.cardBg} transition-all duration-300`}
             style={{
               animationDelay: `${index * 50}ms`,
               animation: 'fadeInUp 0.5s ease-out'
             }}
           >
-            <div className={`absolute inset-0 ${stat.solidBg} opacity-50 group-hover:opacity-70 transition-opacity`}></div>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 {stat.title}
               </CardTitle>
-              <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${stat.iconBg} group-hover:scale-110 transition-transform`}>
-                <stat.icon className={`h-4 w-4 ${stat.iconColor}`} />
+              <div className={`flex items-center justify-center w-12 h-12 rounded-xl ${stat.iconBg} group-hover:scale-110 transition-transform shadow-md`}>
+                <stat.icon className={`h-6 w-6 ${stat.iconColor}`} />
               </div>
             </CardHeader>
-            <CardContent className="relative">
+            <CardContent>
               <div className="text-2xl font-bold tracking-tight">
                 {stat.value}
               </div>
             </CardContent>
           </Card>
         ))}
+
+        {/* Combined Invoice Card */}
+        <Card 
+          className="group hover:scale-[1.02] cursor-pointer border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-100 transition-all duration-300"
+          style={{
+            animationDelay: '100ms',
+            animation: 'fadeInUp 0.5s ease-out'
+          }}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Invoices
+            </CardTitle>
+            <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500 group-hover:scale-110 transition-transform shadow-md">
+              <FileText className="h-6 w-6 text-white" />
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="text-2xl font-bold tracking-tight">
+              {totalInvoices}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {invoiceStatusData.map((status) => (
+                <span 
+                  key={status.label}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${status.bgColor} ${status.textColor}`}
+                >
+                  <status.icon className={`h-3 w-3 ${status.iconColor}`} />
+                  {status.label}: {status.count}
+                </span>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
       
       <style jsx>{`

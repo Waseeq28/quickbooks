@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
-import { Search, DollarSign, Calendar, User, FileText, Mail, Download, RefreshCw, AlertTriangle, Check, Hash, Receipt } from "lucide-react"
+import { Search, DollarSign, Calendar, User, FileText, Mail, Download, RefreshCw, AlertTriangle, Check, Hash, Receipt, CheckCircle, Clock } from "lucide-react"
 import { SimpleInvoice } from "@/types/quickbooks"
 
 interface InvoicePanelProps {
@@ -32,16 +32,40 @@ export function InvoicePanel({
   const [sendEmailError, setSendEmailError] = useState<string | null>(null)
   const [sendEmailSuccess, setSendEmailSuccess] = useState<string | null>(null)
 
-  const getStatusColor = (status: SimpleInvoice["status"]) => {
+  const getStatusConfig = (status: SimpleInvoice["status"]) => {
     switch (status) {
       case "paid":
-        return { backgroundColor: "#10b981", color: "white" }
+        return {
+          bgColor: "bg-green-100",
+          textColor: "text-green-700",
+          iconColor: "text-green-600",
+          icon: CheckCircle,
+          label: "Paid"
+        }
       case "pending":
-        return { backgroundColor: "#6366f1", color: "white" }
+        return {
+          bgColor: "bg-purple-100",
+          textColor: "text-purple-700",
+          iconColor: "text-purple-600",
+          icon: Clock,
+          label: "Pending"
+        }
       case "overdue":
-        return { backgroundColor: "#ef4444", color: "white" }
+        return {
+          bgColor: "bg-red-100",
+          textColor: "text-red-700",
+          iconColor: "text-red-600",
+          icon: AlertTriangle,
+          label: "Overdue"
+        }
       default:
-        return { backgroundColor: "#6b7280", color: "white" }
+        return {
+          bgColor: "bg-gray-100",
+          textColor: "text-gray-700",
+          iconColor: "text-gray-600",
+          icon: FileText,
+          label: "Unknown"
+        }
     }
   }
 
@@ -124,18 +148,29 @@ export function InvoicePanel({
   return (
     <div className="flex flex-col flex-1 bg-transparent overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-4 bg-white/70 backdrop-blur-sm border-b border-primary/10">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-              <Receipt className="h-5 w-5 text-primary" />
-              Invoices
-            </h2>
-            <p className="text-sm text-muted-foreground mt-0.5">Track and manage your billing</p>
+      <div className="relative px-6 py-4 bg-gradient-to-r from-purple-50/80 via-white/80 to-violet-50/80 backdrop-blur-sm border-b border-primary/10">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-violet-500/5"></div>
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-violet-600 shadow-md">
+              <Receipt className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-foreground">
+                Invoices
+              </h2>
+              <p className="text-xs text-muted-foreground font-medium">Track and manage your billing</p>
+            </div>
           </div>
-          <Button onClick={onFetchInvoices} disabled={isLoading} size="sm" variant="outline" className="gap-2 font-medium">
-            <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>{isLoading ? 'Loading...' : 'Refresh'}</span>
+          <Button 
+            onClick={onFetchInvoices} 
+            disabled={isLoading} 
+            size="sm" 
+            variant="outline" 
+            className="gap-2 font-medium bg-gradient-to-r from-white to-purple-50/50 hover:from-purple-50 hover:to-purple-100/80 border-purple-200/60 hover:border-purple-300/80 shadow-md hover:shadow-lg transition-all duration-200 group"
+          >
+            <RefreshCw className={`h-4 w-4 text-purple-600 group-hover:text-purple-700 transition-colors ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'} duration-300`} />
+            <span className="text-purple-700 group-hover:text-purple-800 transition-colors">{isLoading ? 'Loading...' : 'Refresh'}</span>
           </Button>
         </div>
       </div>
@@ -162,49 +197,52 @@ export function InvoicePanel({
                   </p>
                 </div>
               )}
-              {invoices.map((invoice) => (
-                <Card
-                  key={invoice.id}
-                  className={`cursor-pointer transition-all duration-200 hover:shadow-lg border-0 ${
-                    selectedInvoice?.id === invoice.id 
-                      ? "ring-2 ring-primary shadow-lg bg-primary/5" 
-                      : "hover:bg-white/60 bg-white/40"
-                  }`}
-                  onClick={() => handleInvoiceSelection(invoice)}
-                >
-                  <CardContent className="p-3.5">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <Hash className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="font-semibold text-sm">{invoice.id}</span>
+              {invoices.map((invoice) => {
+                const statusConfig = getStatusConfig(invoice.status)
+                return (
+                  <Card
+                    key={invoice.id}
+                    className={`cursor-pointer transition-all duration-200 hover:shadow-lg border-0 ${
+                      selectedInvoice?.id === invoice.id 
+                        ? "ring-2 ring-primary shadow-lg bg-primary/5" 
+                        : "hover:bg-white/60 bg-white/40"
+                    }`}
+                    onClick={() => handleInvoiceSelection(invoice)}
+                  >
+                    <CardContent className="p-3.5">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Hash className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="font-semibold text-sm">{invoice.id}</span>
+                        </div>
+                        <span 
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${statusConfig.bgColor} ${statusConfig.textColor}`}
+                        >
+                          <statusConfig.icon className={`h-3 w-3 ${statusConfig.iconColor}`} />
+                          {statusConfig.label}
+                        </span>
                       </div>
-                      <span 
-                        style={getStatusColor(invoice.status)}
-                        className="inline-flex items-center justify-center rounded-lg px-2 py-0.5 text-xs font-medium"
-                      >
-                        {invoice.status}
-                      </span>
-                    </div>
-                    <p className="text-sm font-medium text-foreground mb-1 truncate">
-                      {invoice.customerName}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <p className="text-lg font-bold text-blue-600">
-                        ${invoice.amount.toFixed(2)}
+                      <p className="text-sm font-medium text-foreground mb-1 truncate">
+                        {invoice.customerName}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {invoice.dueDate}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      <div className="flex items-center justify-between">
+                        <p className="text-lg font-bold text-blue-600">
+                          ${invoice.amount.toFixed(2)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {invoice.dueDate}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
             </div>
           </ScrollArea>
         </div>
 
         {/* Invoice Details */}
-        <div className="flex-1 bg-gradient-to-br from-white/50 to-transparent overflow-hidden">
+        <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-full">
            {isLoading && (
               <div className="flex items-center justify-center h-full">
@@ -217,12 +255,13 @@ export function InvoicePanel({
               </div>
            )}
            {!isLoading && selectedInvoice ? (
-            <div className="p-6">
-              <Card className="border-0 shadow-xl bg-white/90">
-                <CardHeader className="pb-4 rounded-t-xl">
+            <div>
+              <Card className="border-0 shadow-xl bg-gradient-to-br from-white via-gray-50/30 to-gray-100/50 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2220%22 height=%2220%22 viewBox=%220 0 20 20%22%3E%3Cg fill=%22%23f8fafc%22 fill-opacity=%220.03%22%3E%3Cpath d=%22M0 0h20v20H0z%22/%3E%3C/g%3E%3C/svg%3E')] opacity-40"></div>
+                <CardHeader className="pb-2 relative">
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center space-x-3">
-                      <div className="flex items-center justify-center w-12 h-12 rounded-xl shadow-md">
+                      <div className="flex items-center justify-center w-12 h-12 rounded-xl shadow-md bg-white/80">
                         <FileText className="h-6 w-6 text-red-500" />
                       </div>
                       <div>
@@ -234,54 +273,51 @@ export function InvoicePanel({
                         </p>
                       </div>
                     </CardTitle>
-                    <span
-                      style={getStatusColor(selectedInvoice.status)}
-                      className="inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-sm font-semibold shadow-md"
-                    >
-                      {selectedInvoice.status.toUpperCase()}
-                    </span>
+                    {(() => {
+                      const statusConfig = getStatusConfig(selectedInvoice.status)
+                      return (
+                        <span
+                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold shadow-md ${statusConfig.bgColor} ${statusConfig.textColor}`}
+                        >
+                          <statusConfig.icon className={`h-4 w-4 ${statusConfig.iconColor}`} />
+                          {statusConfig.label.toUpperCase()}
+                        </span>
+                      )
+                    })()}
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-6 pt-6">
-                  {/* Customer Info */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-blue-50 p-4 rounded-xl">
-                      <div className="flex items-center space-x-2 text-sm text-muted-foreground font-medium mb-2">
-                        <User className="h-4 w-4 text-primary" />
+                <CardContent className="space-y-3 pt-2 relative">
+                  {/* Customer Info & Dates */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                      <div className="flex items-center space-x-2 text-xs text-slate-600 font-medium mb-1.5">
+                        <User className="h-4 w-4 text-slate-700" />
                         <span>Customer</span>
                       </div>
-                      <p className="font-semibold text-lg text-foreground">{selectedInvoice.customerName}</p>
+                      <p className="font-semibold text-sm text-foreground">{selectedInvoice.customerName}</p>
                     </div>
-                    <div className="bg-cyan-50 p-4 rounded-xl">
-                      <div className="flex items-center space-x-2 text-sm text-muted-foreground font-medium mb-2">
-                        <DollarSign className="h-4 w-4 text-accent" />
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                      <div className="flex items-center space-x-2 text-xs text-slate-600 font-medium mb-1.5">
+                        <DollarSign className="h-4 w-4 text-slate-700" />
                         <span>Total Amount</span>
                       </div>
-                      <p className="font-bold text-2xl text-blue-600">
+                      <p className="font-semibold text-sm text-blue-600">
                         ${selectedInvoice.amount.toFixed(2)}
                       </p>
                     </div>
-                  </div>
-
-                  {/* Dates */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-3 p-3 bg-muted/30 rounded-lg">
-                      <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-lg">
-                        <Calendar className="h-5 w-5 text-primary" />
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                      <div className="flex items-center space-x-2 text-xs text-slate-600 font-medium mb-1.5">
+                        <Calendar className="h-4 w-4 text-slate-700" />
+                        <span>Issue Date</span>
                       </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground font-medium">Issue Date</p>
-                        <p className="font-semibold text-foreground">{selectedInvoice.issueDate}</p>
-                      </div>
+                      <p className="font-semibold text-sm text-foreground">{selectedInvoice.issueDate}</p>
                     </div>
-                    <div className="flex items-center space-x-3 p-3 bg-muted/30 rounded-lg">
-                      <div className="flex items-center justify-center w-10 h-10 bg-accent/10 rounded-lg">
-                        <Calendar className="h-5 w-5 text-accent" />
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                      <div className="flex items-center space-x-2 text-xs text-slate-600 font-medium mb-1.5">
+                        <Calendar className="h-4 w-4 text-slate-700" />
+                        <span>Due Date</span>
                       </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground font-medium">Due Date</p>
-                        <p className="font-semibold text-foreground">{selectedInvoice.dueDate}</p>
-                      </div>
+                      <p className="font-semibold text-sm text-foreground">{selectedInvoice.dueDate}</p>
                     </div>
                   </div>
 
@@ -297,11 +333,11 @@ export function InvoicePanel({
                       {selectedInvoice.items.map((item, index) => (
                         <div 
                           key={index} 
-                          className="flex justify-between items-center p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg hover:from-primary/10 hover:to-accent/10 transition-all"
+                          className="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-all"
                         >
                           <div className="flex-1">
                             <p className="font-semibold text-foreground">{item.description}</p>
-                            <p className="text-sm text-muted-foreground mt-0.5">
+                            <p className="text-sm text-slate-600 mt-0.5">
                               {item.quantity} × ${item.rate.toFixed(2)}
                             </p>
                           </div>

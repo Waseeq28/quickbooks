@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Send, Bot, User, Loader2, Sparkles, Zap, TrendingUp } from "lucide-react";
+import { Send, Bot, User, FileText, Zap, TrendingUp } from "lucide-react";
 import type { UIMessage } from "ai";
 
 interface ChatPanelProps {
@@ -47,21 +47,15 @@ export function ChatPanel({
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Header */}
-              <div className="px-6 py-4 bg-white border-b border-gray-200">
+      <div className="px-5 py-4 bg-white border-b border-gray-200">
         <div className="flex items-center space-x-3">
-          <div className="relative">
-            <div className="absolute inset-0 bg-cyan-200 rounded-xl blur-lg opacity-60 animate-pulse"></div>
-            <div className="relative flex items-center justify-center w-10 h-10 bg-cyan-100 rounded-xl shadow-md">
-              <Bot className="h-5 w-5 text-cyan-700" />
-            </div>
+          <div className="flex items-center justify-center w-9 h-9 bg-cyan-100 rounded-lg shadow-sm">
+            <Bot className="h-5 w-5 text-cyan-700" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-blue-600">
-              AI Assistant
+            <h2 className="text-base font-bold text-cyan-700">
+              Quickbooks AI
             </h2>
-            <p className="text-xs text-muted-foreground font-medium">
-              Powered by QuickBooks Intelligence
-            </p>
           </div>
         </div>
       </div>
@@ -72,46 +66,35 @@ export function ChatPanel({
           <div className="p-4 space-y-4">
             {/* Welcome Message */}
             {messages.length === 0 && (
-              <Card className="border-0 shadow-lg bg-blue-50">
-                <CardContent className="p-6">
-                  <div className="flex items-start space-x-4">
-                    <div className="flex items-center justify-center w-12 h-12 bg-cyan-100 rounded-xl shadow-md flex-shrink-0 animate-float">
-                      <Bot className="h-6 w-6 text-cyan-700" />
+              <Card className="border-0 shadow-sm bg-blue-50">
+                <CardContent className="p-5">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="font-bold text-lg text-foreground">
+                        Welcome! I'm your AI Assistant
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        I can help you manage and analyze your QuickBooks invoices
+                      </p>
                     </div>
-                    <div className="flex-1 space-y-4">
-                      <div>
-                        <h3 className="font-bold text-lg text-foreground">
-                          Welcome! I'm your AI Assistant 👋
-                        </h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          I can help you manage and analyze your QuickBooks invoices
-                        </p>
+                    <div className="grid grid-cols-1 gap-2.5">
+                      <div className="flex items-center space-x-3 p-3 bg-white/60 rounded-lg">
+                        <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                        <span className="text-sm font-medium text-foreground">
+                          Fetch and view all invoices
+                        </span>
                       </div>
-                      <div className="grid grid-cols-1 gap-2.5">
-                        <div className="flex items-center space-x-3 p-2.5 bg-white/60 rounded-lg">
-                                                      <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg">
-                            <Sparkles className="h-4 w-4 text-blue-600" />
-                          </div>
-                          <span className="text-sm font-medium text-foreground">
-                            Fetch and view all invoices
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-3 p-2.5 bg-white/60 rounded-lg">
-                                                      <div className="flex items-center justify-center w-8 h-8 bg-cyan-100 rounded-lg">
-                              <Zap className="h-4 w-4 text-cyan-700" />
-                          </div>
-                          <span className="text-sm font-medium text-foreground">
-                            Find specific invoices instantly
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-3 p-2.5 bg-white/60 rounded-lg">
-                          <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded-lg">
-                            <TrendingUp className="h-4 w-4 text-green-600" />
-                          </div>
-                          <span className="text-sm font-medium text-foreground">
-                            Analyze data and get insights
-                          </span>
-                        </div>
+                      <div className="flex items-center space-x-3 p-3 bg-white/60 rounded-lg">
+                        <Zap className="h-4 w-4 text-cyan-700 flex-shrink-0" />
+                        <span className="text-sm font-medium text-foreground">
+                          Find specific invoices instantly
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-3 p-3 bg-white/60 rounded-lg">
+                        <TrendingUp className="h-4 w-4 text-green-600 flex-shrink-0" />
+                        <span className="text-sm font-medium text-foreground">
+                          Analyze data and get insights
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -135,16 +118,10 @@ export function ChatPanel({
                   message.role === "user" ? "justify-end" : "justify-start"
                 }`}
               >
-                {message.role === "assistant" && (
-                  <div className="flex items-start justify-center w-8 h-8 bg-cyan-100 rounded-lg shadow-sm flex-shrink-0 mt-1">
-                    <Bot className="h-4 w-4 text-cyan-700 mt-1.5" />
-                  </div>
-                )}
-
                 <div
                   className={`max-w-[80%] px-4 py-3 rounded-2xl ${
                     message.role === "user"
-                      ? "bg-blue-100 text-blue-900 shadow-md"
+                      ? "bg-blue-100 text-blue-900 shadow-sm"
                       : "bg-gray-50 border border-gray-200 shadow-sm text-gray-900"
                   }`}
                 >
@@ -168,9 +145,6 @@ export function ChatPanel({
             {/* Loading indicator */}
             {isLoading && (
               <div className="flex gap-3 justify-start">
-                <div className="flex items-start justify-center w-8 h-8 bg-cyan-100 rounded-lg shadow-sm flex-shrink-0 mt-1">
-                  <Bot className="h-4 w-4 text-cyan-700 mt-1.5" />
-                </div>
                 <div className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl shadow-sm">
                   <div className="flex items-center space-x-2">
                     <div className="flex space-x-1">
@@ -199,13 +173,13 @@ export function ChatPanel({
             onChange={handleInputChange}
             placeholder="Ask me anything about your invoices..."
             disabled={isLoading}
-            className="flex-1 bg-white/70 border-primary/20 focus:border-primary/40 placeholder:text-muted-foreground/60"
+            className="flex-1 bg-white/70 border-primary/20 focus:border-primary/40 placeholder:text-muted-foreground/60 text-sm"
           />
           <Button
             type="submit"
             disabled={isLoading || !input.trim()}
-            size="icon"
-            className="shadow-md"
+            size="sm"
+            className="shadow-sm"
           >
             <Send className="h-4 w-4" />
           </Button>
@@ -222,9 +196,8 @@ export function ChatPanel({
               } as React.ChangeEvent<HTMLInputElement>)
             }
             disabled={isLoading}
-            className="text-xs font-medium hover:bg-primary/5 hover:border-primary/30"
+            className="text-xs font-medium hover:bg-primary/5 hover:border-primary/30 h-8 px-3"
           >
-            <Sparkles className="h-3 w-3 mr-1.5" />
             Fetch Invoices
           </Button>
           <Button
@@ -236,7 +209,7 @@ export function ChatPanel({
               } as React.ChangeEvent<HTMLInputElement>)
             }
             disabled={isLoading}
-            className="text-xs font-medium hover:bg-red-50 hover:border-red-300 hover:text-red-700"
+            className="text-xs font-medium hover:bg-red-50 hover:border-red-300 hover:text-red-700 h-8 px-3"
           >
             Overdue
           </Button>
@@ -249,7 +222,7 @@ export function ChatPanel({
               } as React.ChangeEvent<HTMLInputElement>)
             }
             disabled={isLoading}
-            className="text-xs font-medium hover:bg-amber-50 hover:border-amber-300 hover:text-amber-700"
+            className="text-xs font-medium hover:bg-amber-50 hover:border-amber-300 hover:text-amber-700 h-8 px-3"
           >
             Pending Total
           </Button>
