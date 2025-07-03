@@ -15,11 +15,11 @@ export function transformQBInvoiceToSimple(qbInvoice: QBInvoice): SimpleInvoice 
     return "pending"
   }
 
-  // Transform line items
+  // Transform line items - prioritize Description field over ItemRef.name
   const items = qbInvoice.Line
     .filter(line => line.DetailType === 'SalesItemLineDetail')
     .map(line => ({
-      description: line.SalesItemLineDetail?.ItemRef?.name || line.Description || 'Unknown Item',
+      description: line.Description || line.SalesItemLineDetail?.ItemRef?.name || 'Unknown Item',
       quantity: line.SalesItemLineDetail?.Qty || 1,
       rate: line.SalesItemLineDetail?.UnitPrice || line.Amount,
       amount: line.Amount
@@ -30,7 +30,8 @@ export function transformQBInvoiceToSimple(qbInvoice: QBInvoice): SimpleInvoice 
     customerName: qbInvoice.CustomerRef.name || `Customer ${qbInvoice.CustomerRef.value}`,
     amount: qbInvoice.TotalAmt,
     status: getStatus(qbInvoice),
-    dueDate: qbInvoice.DueDate ? formatDate(qbInvoice.DueDate) : 'No due date',
+    dueDate: (qbInvoice as any)._customCreationFlags?.explicitDueDate === false ? 'No due date' : 
+             (qbInvoice.DueDate ? formatDate(qbInvoice.DueDate) : 'No due date'),
     issueDate: formatDate(qbInvoice.TxnDate),
     items
   }

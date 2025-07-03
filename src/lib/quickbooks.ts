@@ -107,6 +107,43 @@ export class QuickBooksService {
       throw error
     }
   }
+
+  // Get all customers
+  async getCustomers(): Promise<any[]> {
+    try {
+      await this.refreshToken()
+      return new Promise((resolve, reject) => {
+        this.qbo.findCustomers((err: any, data: any) => {
+          if (err) {
+            reject(err)
+          } else {
+            const customers = data?.QueryResponse?.Customer || []
+            resolve(customers)
+          }
+        })
+      })
+    } catch (error) {
+      throw error
+    }
+  }
+
+  // Create a new invoice
+  async createInvoice(invoiceData: any): Promise<any> {
+    try {
+      await this.refreshToken()
+      return new Promise((resolve, reject) => {
+        this.qbo.createInvoice(invoiceData, (err: any, data: any) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(data)
+          }
+        })
+      })
+    } catch (error) {
+      throw error
+    }
+  }
 }
 
 // Singleton instance

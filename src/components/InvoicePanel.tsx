@@ -179,7 +179,7 @@ export function InvoicePanel({
                         </div>
                         <span>Total Amount</span>
                       </div>
-                      <p className="font-bold text-2xl text-foreground">${selectedInvoice.amount.toFixed(2)}</p>
+                      <p className="font-semibold text-lg text-foreground">${selectedInvoice.amount.toFixed(2)}</p>
                     </div>
                   </div>
 
