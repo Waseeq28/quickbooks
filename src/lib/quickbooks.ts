@@ -90,6 +90,29 @@ export class QuickBooksService {
     }
   }
 
+  // Delete invoice
+  async deleteInvoice(invoiceId: string, syncToken: string): Promise<any> {
+    try {
+      await this.refreshToken()
+      return new Promise((resolve, reject) => {
+        // For QuickBooks, we need to pass the invoice object with Id and SyncToken
+        const invoiceToDelete = {
+          Id: invoiceId,
+          SyncToken: syncToken
+        }
+        this.qbo.deleteInvoice(invoiceToDelete, (err: any, data: any) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(data)
+          }
+        })
+      })
+    } catch (error) {
+      throw error
+    }
+  }
+
   // Send invoice email
   async sendInvoiceEmail(invoiceId: string, emailAddress: string): Promise<any> {
     try {

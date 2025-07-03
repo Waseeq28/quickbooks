@@ -44,6 +44,8 @@ export default function InvoiceManagement() {
             setInvoices(result.invoices)
             setSelectedInvoice(result.invoices[0] || null)
           }
+          // Clear loading state when fetchAllInvoices completes
+          setIsLoadingInvoices(false)
         }
         
         if (toolInvocation.toolName === 'getInvoice' && 'result' in toolInvocation) {
@@ -75,6 +77,43 @@ export default function InvoiceManagement() {
             const simplifiedInvoice = transformQBInvoiceToSimple(result.invoice)
             setInvoices(prev => [simplifiedInvoice, ...prev]) // Add to beginning of list
             setSelectedInvoice(simplifiedInvoice) // Select the newly created invoice
+          }
+        }
+
+        if (toolInvocation.toolName === 'updateInvoice' && 'result' in toolInvocation) {
+          const result = toolInvocation.result as any
+          
+          if (result.success && result.invoice) {
+            // Transform the updated invoice
+            const updatedSimplifiedInvoice = transformQBInvoiceToSimple(result.invoice)
+            
+            // Update the invoice in the list
+            setInvoices(prev => prev.map(invoice => 
+              invoice.id === updatedSimplifiedInvoice.id ? updatedSimplifiedInvoice : invoice
+            ))
+            
+            // Update selected invoice if it's the one that was updated
+            if (selectedInvoice?.id === updatedSimplifiedInvoice.id) {
+              setSelectedInvoice(updatedSimplifiedInvoice)
+            }
+          }
+        }
+
+        if (toolInvocation.toolName === 'deleteInvoice' && 'result' in toolInvocation) {
+          const result = toolInvocation.result as any
+          
+          if (result.success && result.deletedInvoiceId) {
+            // Remove the deleted invoice from the list
+            setInvoices(prev => {
+              const updatedInvoices = prev.filter(invoice => invoice.id !== result.deletedInvoiceId)
+              
+              // If the deleted invoice was selected, select another one or clear selection
+              if (selectedInvoice?.id === result.deletedInvoiceId) {
+                setSelectedInvoice(updatedInvoices.length > 0 ? updatedInvoices[0] : null)
+              }
+              
+              return updatedInvoices
+            })
           }
         }
       }
