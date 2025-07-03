@@ -261,6 +261,42 @@ const invoiceTools = {
       }
     },
   }),
+
+  downloadInvoicePdf: tool({
+    description: 'Download PDF version of an invoice from QuickBooks Online. Use this when the user wants to download or get a PDF copy of a specific invoice.',
+    parameters: z.object({
+      invoiceId: z.string().describe('The ID of the invoice to download as PDF'),
+      invoiceReference: z.string().optional().describe('Invoice reference or number for user confirmation')
+    }),
+    execute: async ({ invoiceId, invoiceReference }) => {
+      try {
+        // Verify the invoice exists first
+        const invoice = await qbService.getInvoice(invoiceId);
+        
+        if (!invoice) {
+          return {
+            success: false,
+            error: 'Invoice not found',
+            message: `Invoice "${invoiceReference || invoiceId}" not found.`
+          };
+        }
+
+        return {
+          success: true,
+          message: `The PDF download has been initiated for invoice ${invoiceReference || invoiceId}.`,
+          downloadUrl: `/api/quickbooks/invoices/${invoiceId}/pdf`,
+          invoiceId: invoiceId,
+          action: 'download_pdf'
+        };
+      } catch (error: any) {
+        return {
+          success: false,
+          error: 'Failed to initiate PDF download',
+          message: `Could not download PDF for invoice "${invoiceReference || invoiceId}". Error: ${error.message}`
+        };
+      }
+    },
+  }),
 };
 
 export async function POST(req: Request) {
@@ -281,6 +317,7 @@ You can help users with their QuickBooks invoices by:
 - Creating new invoices with customer and line item details
 - Updating existing invoices (due dates, line items, customer changes)
 - Deleting (voiding) invoices from QuickBooks
+- Downloading PDF versions of invoices
 - Answering questions about invoice data when specifically asked
 
 When a user asks to see, fetch, get, or retrieve invoices, use the fetchAllInvoices tool and only provide a brief confirmation. The UI will display the invoices.
@@ -288,6 +325,7 @@ When a user asks about a specific invoice by ID, use the getInvoice tool with th
 When a user wants to create a new invoice, first get the customers list using getCustomers tool if needed, then use the createInvoice tool with ONLY the parameters the user explicitly provided.
 When a user wants to update an invoice, first get the specific invoice using getInvoice to obtain the current sync token, then use updateInvoice with the invoice ID, sync token, and requested changes.
 When a user wants to delete an invoice, first get the specific invoice using getInvoice to obtain the sync token, then use deleteInvoice with the invoice ID and sync token.
+When a user wants to download a PDF of an invoice, use downloadInvoicePdf with the invoice ID. The tool will verify the invoice exists and automatically trigger the download. Only respond with the success message, do not include URLs or technical details.
 
 IMPORTANT: Only use information the user explicitly provides. Do not assume or add:
 - Transaction dates (let QuickBooks set defaults)

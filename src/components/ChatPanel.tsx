@@ -98,6 +98,12 @@ export function ChatPanel({
                             Analyze invoice data and provide insights
                           </span>
                         </div>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary/60 flex-shrink-0"></div>
+                          <span className="text-sm text-muted-foreground">
+                            Download PDF versions of invoices
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -12,7 +12,7 @@ export class QuickBooksService {
       false, // no token secret needed for OAuth 2.0
       process.env.QB_REALM_ID!,
       process.env.QB_ENVIRONMENT === 'sandbox', // true for sandbox
-      process.env.QB_DEBUG === 'true', // enable debug logging
+      false, // debug logging disabled
       null, // minor version (use default)
       '2.0', // oauth version
       process.env.QB_REFRESH_TOKEN!

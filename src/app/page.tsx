@@ -116,6 +116,20 @@ export default function InvoiceManagement() {
             })
           }
         }
+
+        if (toolInvocation.toolName === 'downloadInvoicePdf' && 'result' in toolInvocation) {
+          const result = toolInvocation.result as any
+          
+          if (result.success && result.downloadUrl) {
+            // Automatically trigger the PDF download
+            const link = document.createElement('a')
+            link.href = result.downloadUrl
+            link.download = `invoice-${result.invoiceId}.pdf`
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+          }
+        }
       }
     }
   })
