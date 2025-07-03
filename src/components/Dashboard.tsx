@@ -29,7 +29,7 @@ export function Dashboard({ invoices }: DashboardProps) {
       title: "Total Revenue",
       value: formatCurrency(totalAmount),
       icon: TrendingUp,
-      gradient: "gradient-success",
+      solidBg: "bg-green-50",
       iconBg: "bg-green-100",
       iconColor: "text-green-600",
     },
@@ -37,7 +37,7 @@ export function Dashboard({ invoices }: DashboardProps) {
       title: "Outstanding",
       value: formatCurrency(totalDue),
       icon: DollarSign,
-      gradient: "gradient-warning",
+      solidBg: "bg-amber-50",
       iconBg: "bg-amber-100",
       iconColor: "text-amber-600",
     },
@@ -45,7 +45,7 @@ export function Dashboard({ invoices }: DashboardProps) {
       title: "Invoices",
       value: totalInvoices,
       icon: FileText,
-      gradient: "gradient-primary",
+      solidBg: "bg-blue-50",
       iconBg: "bg-blue-100",
       iconColor: "text-blue-600",
     },
@@ -53,7 +53,7 @@ export function Dashboard({ invoices }: DashboardProps) {
       title: "Paid",
       value: paidCount,
       icon: CheckCircle,
-      gradient: "gradient-success",
+      solidBg: "bg-emerald-50",
       iconBg: "bg-emerald-100",
       iconColor: "text-emerald-600",
     },
@@ -61,7 +61,7 @@ export function Dashboard({ invoices }: DashboardProps) {
       title: "Pending",
       value: pendingCount,
       icon: Clock,
-      gradient: "gradient-accent",
+      solidBg: "bg-purple-50",
       iconBg: "bg-purple-100",
       iconColor: "text-purple-600",
     },
@@ -69,14 +69,14 @@ export function Dashboard({ invoices }: DashboardProps) {
       title: "Overdue",
       value: overdueCount,
       icon: AlertTriangle,
-      gradient: "gradient-danger",
+      solidBg: "bg-red-50",
       iconBg: "bg-red-100",
       iconColor: "text-red-600",
     },
   ]
 
   return (
-    <div className="p-4 lg:p-6 bg-gradient-to-br from-primary/5 via-transparent to-accent/5">
+    <div className="p-4 lg:p-6 bg-gray-50">
       <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-6">
         {stats.map((stat, index) => (
           <Card 
@@ -87,7 +87,7 @@ export function Dashboard({ invoices }: DashboardProps) {
               animation: 'fadeInUp 0.5s ease-out'
             }}
           >
-            <div className={`absolute inset-0 ${stat.gradient} opacity-5 group-hover:opacity-10 transition-opacity`}></div>
+            <div className={`absolute inset-0 ${stat.solidBg} opacity-50 group-hover:opacity-70 transition-opacity`}></div>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 {stat.title}

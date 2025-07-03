@@ -189,7 +189,7 @@ export function InvoicePanel({
                       {invoice.customerName}
                     </p>
                     <div className="flex items-center justify-between">
-                      <p className="text-lg font-bold gradient-primary bg-clip-text text-transparent">
+                      <p className="text-lg font-bold text-blue-600">
                         ${invoice.amount.toFixed(2)}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -245,19 +245,19 @@ export function InvoicePanel({
                 <CardContent className="space-y-6 pt-6">
                   {/* Customer Info */}
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-gradient-to-br from-primary/5 to-transparent p-4 rounded-xl">
+                    <div className="bg-blue-50 p-4 rounded-xl">
                       <div className="flex items-center space-x-2 text-sm text-muted-foreground font-medium mb-2">
                         <User className="h-4 w-4 text-primary" />
                         <span>Customer</span>
                       </div>
                       <p className="font-semibold text-lg text-foreground">{selectedInvoice.customerName}</p>
                     </div>
-                    <div className="bg-gradient-to-br from-accent/5 to-transparent p-4 rounded-xl">
+                    <div className="bg-cyan-50 p-4 rounded-xl">
                       <div className="flex items-center space-x-2 text-sm text-muted-foreground font-medium mb-2">
                         <DollarSign className="h-4 w-4 text-accent" />
                         <span>Total Amount</span>
                       </div>
-                      <p className="font-bold text-2xl gradient-primary bg-clip-text text-transparent">
+                      <p className="font-bold text-2xl text-blue-600">
                         ${selectedInvoice.amount.toFixed(2)}
                       </p>
                     </div>
@@ -305,7 +305,7 @@ export function InvoicePanel({
                               {item.quantity} × ${item.rate.toFixed(2)}
                             </p>
                           </div>
-                          <p className="font-bold text-lg gradient-primary bg-clip-text text-transparent">
+                          <p className="font-bold text-lg text-blue-600">
                             ${item.amount.toFixed(2)}
                           </p>
                         </div>

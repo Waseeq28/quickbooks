@@ -45,18 +45,18 @@ export function ChatPanel({
   };
 
   return (
-    <div className="h-full flex flex-col bg-gradient-to-br from-white via-white to-primary/5">
+    <div className="h-full flex flex-col bg-white">
       {/* Header */}
-      <div className="px-6 py-4 bg-white/80 backdrop-blur-sm border-b border-primary/10">
+              <div className="px-6 py-4 bg-white border-b border-gray-200">
         <div className="flex items-center space-x-3">
           <div className="relative">
-            <div className="absolute inset-0 gradient-accent rounded-xl blur-lg opacity-60 animate-pulse"></div>
-            <div className="relative flex items-center justify-center w-10 h-10 gradient-accent rounded-xl shadow-md">
-              <Bot className="h-5 w-5 text-accent-foreground" />
+            <div className="absolute inset-0 bg-cyan-200 rounded-xl blur-lg opacity-60 animate-pulse"></div>
+            <div className="relative flex items-center justify-center w-10 h-10 bg-cyan-100 rounded-xl shadow-md">
+              <Bot className="h-5 w-5 text-cyan-700" />
             </div>
           </div>
           <div>
-            <h2 className="text-lg font-bold text-primary">
+            <h2 className="text-lg font-bold text-blue-600">
               AI Assistant
             </h2>
             <p className="text-xs text-muted-foreground font-medium">
@@ -72,11 +72,11 @@ export function ChatPanel({
           <div className="p-4 space-y-4">
             {/* Welcome Message */}
             {messages.length === 0 && (
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-primary/5 to-accent/5">
+              <Card className="border-0 shadow-lg bg-blue-50">
                 <CardContent className="p-6">
                   <div className="flex items-start space-x-4">
-                    <div className="flex items-center justify-center w-12 h-12 gradient-accent rounded-xl shadow-md flex-shrink-0 animate-float">
-                      <Bot className="h-6 w-6 text-accent-foreground" />
+                    <div className="flex items-center justify-center w-12 h-12 bg-cyan-100 rounded-xl shadow-md flex-shrink-0 animate-float">
+                      <Bot className="h-6 w-6 text-cyan-700" />
                     </div>
                     <div className="flex-1 space-y-4">
                       <div>
@@ -89,16 +89,16 @@ export function ChatPanel({
                       </div>
                       <div className="grid grid-cols-1 gap-2.5">
                         <div className="flex items-center space-x-3 p-2.5 bg-white/60 rounded-lg">
-                          <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded-lg">
-                            <Sparkles className="h-4 w-4 text-primary" />
+                                                      <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg">
+                            <Sparkles className="h-4 w-4 text-blue-600" />
                           </div>
                           <span className="text-sm font-medium text-foreground">
                             Fetch and view all invoices
                           </span>
                         </div>
                         <div className="flex items-center space-x-3 p-2.5 bg-white/60 rounded-lg">
-                          <div className="flex items-center justify-center w-8 h-8 bg-accent/10 rounded-lg">
-                            <Zap className="h-4 w-4 text-accent-foreground" />
+                                                      <div className="flex items-center justify-center w-8 h-8 bg-cyan-100 rounded-lg">
+                              <Zap className="h-4 w-4 text-cyan-700" />
                           </div>
                           <span className="text-sm font-medium text-foreground">
                             Find specific invoices instantly
@@ -136,20 +136,20 @@ export function ChatPanel({
                 }`}
               >
                 {message.role === "assistant" && (
-                  <div className="flex items-start justify-center w-8 h-8 gradient-accent rounded-lg shadow-sm flex-shrink-0 mt-1">
-                    <Bot className="h-4 w-4 text-accent-foreground mt-1.5" />
+                  <div className="flex items-start justify-center w-8 h-8 bg-cyan-100 rounded-lg shadow-sm flex-shrink-0 mt-1">
+                    <Bot className="h-4 w-4 text-cyan-700 mt-1.5" />
                   </div>
                 )}
 
                 <div
                   className={`max-w-[80%] px-4 py-3 rounded-2xl ${
                     message.role === "user"
-                      ? "gradient-primary text-white shadow-md"
-                      : "bg-white/80 border border-primary/10 shadow-sm"
+                      ? "bg-blue-100 text-blue-900 shadow-md"
+                      : "bg-gray-50 border border-gray-200 shadow-sm text-gray-900"
                   }`}
                 >
                   <p className={`text-sm leading-relaxed whitespace-pre-wrap break-words ${
-                    message.role === "user" ? "text-white" : "text-foreground"
+                    message.role === "user" ? "text-blue-900" : "text-gray-900"
                   }`}>
                     {typeof message.content === "string"
                       ? message.content
@@ -158,8 +158,8 @@ export function ChatPanel({
                 </div>
 
                 {message.role === "user" && (
-                  <div className="flex items-start justify-center w-8 h-8 bg-primary/10 rounded-lg flex-shrink-0 mt-1">
-                    <User className="h-4 w-4 text-primary mt-1.5" />
+                  <div className="flex items-start justify-center w-8 h-8 bg-blue-100 rounded-lg flex-shrink-0 mt-1">
+                    <User className="h-4 w-4 text-blue-700 mt-1.5" />
                   </div>
                 )}
               </div>
@@ -168,17 +168,17 @@ export function ChatPanel({
             {/* Loading indicator */}
             {isLoading && (
               <div className="flex gap-3 justify-start">
-                <div className="flex items-start justify-center w-8 h-8 gradient-accent rounded-lg shadow-sm flex-shrink-0 mt-1">
-                  <Bot className="h-4 w-4 text-accent-foreground mt-1.5" />
+                <div className="flex items-start justify-center w-8 h-8 bg-cyan-100 rounded-lg shadow-sm flex-shrink-0 mt-1">
+                  <Bot className="h-4 w-4 text-cyan-700 mt-1.5" />
                 </div>
-                <div className="px-4 py-3 bg-white/80 border border-primary/10 rounded-2xl shadow-sm">
+                <div className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl shadow-sm">
                   <div className="flex items-center space-x-2">
                     <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                     </div>
-                    <span className="text-sm text-muted-foreground font-medium ml-2">
+                    <span className="text-sm text-gray-600 font-medium ml-2">
                       AI is thinking
                     </span>
                   </div>
@@ -189,7 +189,7 @@ export function ChatPanel({
         </ScrollArea>
       </div>
 
-      <Separator className="bg-primary/10" />
+      <Separator className="bg-gray-200" />
 
       {/* Input Area */}
       <div className="p-4 bg-white/80 backdrop-blur-sm space-y-3">

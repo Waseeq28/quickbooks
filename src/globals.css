@@ -179,6 +179,23 @@
     background-color: #6b7280;
   }
   
+  /* Light solid color replacements for gradients */
+  .gradient-primary {
+    background-color: #8b5cf6; /* Light purple */
+  }
+  .gradient-accent {
+    background-color: #06b6d4; /* Light cyan */
+  }
+  .gradient-success {
+    background-color: #10b981; /* Light green */
+  }
+  .gradient-warning {
+    background-color: #f59e0b; /* Light amber */
+  }
+  .gradient-danger {
+    background-color: #ef4444; /* Light red */
+  }
+  
   /* Subtle animations */
   .animate-float {
     animation: float 3s ease-in-out infinite;

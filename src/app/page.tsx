@@ -166,11 +166,11 @@ export default function InvoiceManagement() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="h-screen flex flex-col bg-slate-50">
       <Header />
       <div className="flex-1 flex overflow-hidden">
         {/* Invoice Panel */}
-        <div className="flex-1 flex flex-col bg-white/50 backdrop-blur-sm">
+        <div className="flex-1 flex flex-col bg-white">
           <Dashboard invoices={invoices} />
           <InvoicePanel
             invoices={invoices}
@@ -182,7 +182,7 @@ export default function InvoiceManagement() {
           />
         </div>
         {/* Chat Panel */}
-        <div className="w-[600px] border-l border-primary/10 bg-white/80 backdrop-blur-sm shadow-xl">
+        <div className="w-[600px] border-l border-gray-200 bg-white shadow-xl">
           <ChatPanel
             messages={messages}
             input={input}
