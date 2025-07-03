@@ -48,6 +48,37 @@ export function InvoicePanel({
     }
   }
 
+  const handleDownloadPdf = async (invoiceId: string) => {
+    try {
+      const response = await fetch(`/api/quickbooks/invoices/${invoiceId}/pdf`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to download PDF')
+      }
+
+      // Get the PDF blob
+      const blob = await response.blob()
+      
+      // Create a download link
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.style.display = 'none'
+      a.href = url
+      a.download = `invoice-${invoiceId}.pdf`
+      
+      // Trigger download
+      document.body.appendChild(a)
+      a.click()
+      
+      // Cleanup
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error('Error downloading PDF:', error)
+      // You could add a toast notification here
+    }
+  }
+
   return (
     <div className="flex flex-col h-full bg-card">
       {/* Header */}
@@ -233,7 +264,7 @@ export function InvoicePanel({
                       <Mail className="h-4 w-4 mr-2" />
                       Send Email
                     </Button>
-                    <Button variant="outline" size="sm" className="border-border/50">
+                    <Button variant="outline" size="sm" className="border-border/50" onClick={() => handleDownloadPdf(selectedInvoice.id)}>
                       <Download className="h-4 w-4 mr-2" />
                       Download PDF
                     </Button>

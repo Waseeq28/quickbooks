@@ -133,9 +133,7 @@ const invoiceTools = {
           }))
         };
 
-        console.log('Creating invoice with data:', JSON.stringify(invoiceData, null, 2));
         const createdInvoice = await qbService.createInvoice(invoiceData);
-        console.log('Created invoice result:', JSON.stringify(createdInvoice, null, 2));
         
         // Add a flag to track if we explicitly set due date
         if (createdInvoice) {

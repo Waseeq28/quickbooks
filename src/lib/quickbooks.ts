@@ -131,6 +131,24 @@ export class QuickBooksService {
     }
   }
 
+  // Get invoice PDF
+  async getInvoicePdf(invoiceId: string): Promise<Buffer> {
+    try {
+      await this.refreshToken()
+      return new Promise((resolve, reject) => {
+        this.qbo.getInvoicePdf(invoiceId, (err: any, data: any) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(data)
+          }
+        })
+      })
+    } catch (error) {
+      throw error
+    }
+  }
+
   // Get all customers
   async getCustomers(): Promise<any[]> {
     try {
