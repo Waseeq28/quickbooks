@@ -5,6 +5,7 @@ import { useChat } from '@ai-sdk/react'
 import { InvoicePanel } from "@/components/InvoicePanel"
 import { ChatPanel } from "@/components/ChatPanel"
 import { Header } from "@/components/Header"
+import { Dashboard } from "@/components/Dashboard"
 import { SimpleInvoice } from "@/types/quickbooks"
 import { transformQBInvoiceToSimple } from "@/lib/quickbooks-transform"
 
@@ -165,11 +166,12 @@ export default function InvoiceManagement() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-slate-50">
       <Header />
       <div className="flex-1 flex overflow-hidden">
         {/* Invoice Panel */}
-        <div className="flex-1">
+        <div className="flex-1 flex flex-col bg-white">
+          <Dashboard invoices={invoices} />
           <InvoicePanel
             invoices={invoices}
             selectedInvoice={selectedInvoice}
@@ -180,7 +182,7 @@ export default function InvoiceManagement() {
           />
         </div>
         {/* Chat Panel */}
-        <div className="w-[700px] border-l border-border/40">
+        <div className="w-[600px] border-l border-gray-200 bg-white shadow-xl">
           <ChatPanel
             messages={messages}
             input={input}

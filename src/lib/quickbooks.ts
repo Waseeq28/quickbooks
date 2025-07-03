@@ -24,7 +24,7 @@ export class QuickBooksService {
     return new Promise((resolve, reject) => {
       this.qbo.refreshAccessToken((err: any, authResponse: any) => {
         if (err) {
-          return reject(err)
+          return reject(new Error(err.Fault?.Error?.[0]?.Detail || JSON.stringify(err)))
         }
         
         // The library automatically updates the qbo instance with the new token
@@ -42,7 +42,7 @@ export class QuickBooksService {
       return new Promise((resolve, reject) => {
         this.qbo.findInvoices((err: any, data: any) => {
           if (err) {
-            reject(err)
+            reject(new Error(err.Fault?.Error?.[0]?.Detail || JSON.stringify(err)))
           } else {
             const invoices = data?.QueryResponse?.Invoice || []
             resolve(invoices)
@@ -61,7 +61,7 @@ export class QuickBooksService {
       return new Promise((resolve, reject) => {
         this.qbo.getInvoice(invoiceId, (err: any, data: any) => {
           if (err) {
-            reject(err)
+            reject(new Error(err.Fault?.Error?.[0]?.Detail || JSON.stringify(err)))
           } else {
             resolve(data)
           }
@@ -79,7 +79,7 @@ export class QuickBooksService {
       return new Promise((resolve, reject) => {
         this.qbo.updateInvoice(invoice, (err: any, data: any) => {
           if (err) {
-            reject(err)
+            reject(new Error(err.Fault?.Error?.[0]?.Detail || JSON.stringify(err)))
           } else {
             resolve(data)
           }
@@ -102,7 +102,7 @@ export class QuickBooksService {
         }
         this.qbo.deleteInvoice(invoiceToDelete, (err: any, data: any) => {
           if (err) {
-            reject(err)
+            reject(new Error(err.Fault?.Error?.[0]?.Detail || JSON.stringify(err)))
           } else {
             resolve(data)
           }
@@ -120,7 +120,7 @@ export class QuickBooksService {
       return new Promise((resolve, reject) => {
         this.qbo.sendInvoicePdf(invoiceId, emailAddress, (err: any, data: any) => {
           if (err) {
-            reject(err)
+            reject(new Error(err.Fault?.Error?.[0]?.Detail || JSON.stringify(err)))
           } else {
             resolve(data)
           }
@@ -138,7 +138,7 @@ export class QuickBooksService {
       return new Promise((resolve, reject) => {
         this.qbo.getInvoicePdf(invoiceId, (err: any, data: any) => {
           if (err) {
-            reject(err)
+            reject(new Error(err.Fault?.Error?.[0]?.Detail || JSON.stringify(err)))
           } else {
             resolve(data)
           }
@@ -156,7 +156,7 @@ export class QuickBooksService {
       return new Promise((resolve, reject) => {
         this.qbo.findCustomers((err: any, data: any) => {
           if (err) {
-            reject(err)
+            reject(new Error(err.Fault?.Error?.[0]?.Detail || JSON.stringify(err)))
           } else {
             const customers = data?.QueryResponse?.Customer || []
             resolve(customers)
@@ -175,7 +175,7 @@ export class QuickBooksService {
       return new Promise((resolve, reject) => {
         this.qbo.createInvoice(invoiceData, (err: any, data: any) => {
           if (err) {
-            reject(err)
+            reject(new Error(err.Fault?.Error?.[0]?.Detail || JSON.stringify(err)))
           } else {
             resolve(data)
           }
