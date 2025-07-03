@@ -27,17 +27,10 @@ export function InvoicePanel({
   onFetchInvoices,
   error 
 }: InvoicePanelProps) {
-  const [searchTerm, setSearchTerm] = useState("")
   const [emailToSend, setEmailToSend] = useState("")
   const [isSendingEmail, setIsSendingEmail] = useState(false)
   const [sendEmailError, setSendEmailError] = useState<string | null>(null)
   const [sendEmailSuccess, setSendEmailSuccess] = useState<string | null>(null)
-
-  const filteredInvoices = invoices.filter(
-    (invoice) =>
-      invoice.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.id.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
 
   const getStatusColor = (status: SimpleInvoice["status"]) => {
     switch (status) {
@@ -129,7 +122,7 @@ export function InvoicePanel({
   }
 
   return (
-    <div className="flex flex-col h-full bg-card">
+    <div className="flex flex-col flex-1 bg-card overflow-hidden">
       {/* Header */}
       <div className="p-6 border-b border-border/40">
         <div className="flex items-center justify-between mb-4">
@@ -141,15 +134,6 @@ export function InvoicePanel({
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             <span>{isLoading ? 'Fetching...' : 'Fetch Invoices'}</span>
           </Button>
-        </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search invoices..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-background/50 border-border/50 focus:bg-background"
-          />
         </div>
       </div>
 
@@ -173,7 +157,7 @@ export function InvoicePanel({
                   </p>
                 </div>
               )}
-              {filteredInvoices.map((invoice) => (
+              {invoices.map((invoice) => (
                 <Card
                   key={invoice.id}
                   className={`cursor-pointer transition-all duration-200 hover:shadow-md border-border/50 ${

@@ -29,6 +29,7 @@ export function transformQBInvoiceToSimple(qbInvoice: QBInvoice): SimpleInvoice 
     id: qbInvoice.Id,
     customerName: qbInvoice.CustomerRef.name || `Customer ${qbInvoice.CustomerRef.value}`,
     amount: qbInvoice.TotalAmt,
+    balance: qbInvoice.Balance,
     status: getStatus(qbInvoice),
     dueDate: (qbInvoice as any)._customCreationFlags?.explicitDueDate === false ? 'No due date' : 
              (qbInvoice.DueDate ? formatDate(qbInvoice.DueDate) : 'No due date'),

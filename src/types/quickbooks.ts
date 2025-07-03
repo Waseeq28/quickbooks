@@ -65,6 +65,7 @@ export interface SimpleInvoice {
   id: string
   customerName: string
   amount: number
+  balance: number
   status: "paid" | "pending" | "overdue"
   dueDate: string
   issueDate: string
