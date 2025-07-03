@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
-import { Search, DollarSign, Calendar, User, FileText, Mail, Download, RefreshCw, AlertTriangle } from "lucide-react"
+import { Search, DollarSign, Calendar, User, FileText, Mail, Download, RefreshCw, AlertTriangle, Check } from "lucide-react"
 import { SimpleInvoice } from "@/types/quickbooks"
 
 interface InvoicePanelProps {
@@ -28,6 +28,10 @@ export function InvoicePanel({
   error 
 }: InvoicePanelProps) {
   const [searchTerm, setSearchTerm] = useState("")
+  const [emailToSend, setEmailToSend] = useState("")
+  const [isSendingEmail, setIsSendingEmail] = useState(false)
+  const [sendEmailError, setSendEmailError] = useState<string | null>(null)
+  const [sendEmailSuccess, setSendEmailSuccess] = useState<string | null>(null)
 
   const filteredInvoices = invoices.filter(
     (invoice) =>
@@ -76,6 +80,51 @@ export function InvoicePanel({
     } catch (error) {
       console.error('Error downloading PDF:', error)
       // You could add a toast notification here
+    }
+  }
+
+  const handleInvoiceSelection = (invoice: SimpleInvoice) => {
+    onInvoiceSelect(invoice)
+    // Reset state when a new invoice is selected
+    setEmailToSend("")
+    setSendEmailError(null)
+    setSendEmailSuccess(null)
+  }
+
+  const handleSendEmail = async (invoiceId: string) => {
+    if (!emailToSend) {
+      setSendEmailError("Please enter a recipient's email address.")
+      return
+    }
+
+    setIsSendingEmail(true)
+    setSendEmailError(null)
+    setSendEmailSuccess(null)
+
+    try {
+      const response = await fetch(`/api/quickbooks/invoices/${invoiceId}/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailToSend }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to send email');
+      }
+      
+      setSendEmailSuccess(result.message || "Email sent successfully!")
+      setEmailToSend("")
+    } catch (error: any) {
+      setSendEmailError(error.message)
+    } finally {
+      setIsSendingEmail(false)
+      // Clear messages after a few seconds
+      setTimeout(() => {
+        setSendEmailError(null)
+        setSendEmailSuccess(null)
+      }, 5000)
     }
   }
 
@@ -132,7 +181,7 @@ export function InvoicePanel({
                       ? "ring-2 ring-primary shadow-md bg-accent/30" 
                       : "hover:bg-accent/20"
                   }`}
-                  onClick={() => onInvoiceSelect(invoice)}
+                  onClick={() => handleInvoiceSelection(invoice)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-3">
@@ -210,9 +259,11 @@ export function InvoicePanel({
                         </div>
                         <span>Total Amount</span>
                       </div>
-                      <p className="font-semibold text-lg text-foreground">${selectedInvoice.amount.toFixed(2)}</p>
+                      <span className="font-semibold text-foreground">${selectedInvoice.amount.toFixed(2)}</span>
                     </div>
                   </div>
+
+                  <Separator className="bg-border/40" />
 
                   {/* Dates */}
                   <div className="grid grid-cols-2 gap-6">
@@ -256,18 +307,58 @@ export function InvoicePanel({
                     </div>
                   </div>
 
-                  <Separator />
-
                   {/* Actions */}
-                  <div className="flex flex-wrap gap-3">
-                    <Button variant="default" size="sm" className="shadow-sm">
-                      <Mail className="h-4 w-4 mr-2" />
-                      Send Email
-                    </Button>
-                    <Button variant="outline" size="sm" className="border-border/50" onClick={() => handleDownloadPdf(selectedInvoice.id)}>
-                      <Download className="h-4 w-4 mr-2" />
-                      Download PDF
-                    </Button>
+                  <div className="pt-6 space-y-3">
+                    <div className="flex items-end gap-2">
+                      <div className="flex-grow">
+                        <label htmlFor="emailForInvoice" className="text-xs font-medium text-muted-foreground pl-1">
+                          Send invoice to email
+                        </label>
+                        <Input
+                          id="emailForInvoice"
+                          type="email"
+                          placeholder="recipient@example.com"
+                          value={emailToSend}
+                          onChange={(e) => setEmailToSend(e.target.value)}
+                          disabled={isSendingEmail}
+                          className="bg-background/50 border-border/50 focus:bg-background mt-1"
+                        />
+                      </div>
+                      
+                      <Button
+                        onClick={() => handleSendEmail(selectedInvoice.id)}
+                        disabled={isSendingEmail || !emailToSend || !!sendEmailSuccess}
+                        className="gap-2 w-32"
+                      >
+                        {isSendingEmail ? (
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                        ) : sendEmailSuccess ? (
+                          <Check className="h-4 w-4" />
+                        ) : (
+                          <Mail className="h-4 w-4" />
+                        )}
+                        <span>
+                          {isSendingEmail
+                            ? 'Sending...'
+                            : sendEmailSuccess
+                            ? 'Sent!'
+                            : 'Send'}
+                        </span>
+                      </Button>
+
+                      <Button 
+                        onClick={() => handleDownloadPdf(selectedInvoice.id)}
+                        variant="outline"
+                        className="gap-2 w-32"
+                      >
+                        <Download className="h-4 w-4" />
+                        <span>Download</span>
+                      </Button>
+                    </div>
+                    <div className="h-4">
+                      {sendEmailError && <p className="text-sm text-red-600 pl-1">{sendEmailError}</p>}
+                      {sendEmailSuccess && <p className="text-sm text-emerald-600 pl-1">{sendEmailSuccess}</p>}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
