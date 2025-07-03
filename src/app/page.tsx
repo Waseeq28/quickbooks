@@ -130,6 +130,14 @@ export default function InvoiceManagement() {
             document.body.removeChild(link)
           }
         }
+
+        if (toolInvocation.toolName === 'sendInvoicePdf' && 'result' in toolInvocation) {
+          // The result of this tool is primarily for user feedback in the chat,
+          // which is automatically handled by the AI SDK.
+          // No specific client-side action is needed here, but you could add
+          // a notification if desired. For example:
+          // console.log('Invoice email sent:', toolInvocation.result);
+        }
       }
     }
   })

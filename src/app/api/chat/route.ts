@@ -262,6 +262,31 @@ const invoiceTools = {
     },
   }),
 
+  sendInvoicePdf: tool({
+    description: 'Send the PDF of a specific invoice to a recipient via email. Use this when the user wants to email an invoice.',
+    parameters: z.object({
+      invoiceId: z.string().describe('The ID of the invoice to send'),
+      email: z.string().email().describe('The email address of the recipient'),
+    }),
+    execute: async ({ invoiceId, email }) => {
+      try {
+        await qbService.sendInvoiceEmail(invoiceId, email);
+        return {
+          success: true,
+          message: `Invoice ${invoiceId} has been sent to ${email}.`,
+          invoiceId: invoiceId,
+          email: email
+        };
+      } catch (error: any) {
+        return {
+          success: false,
+          error: 'Failed to send invoice PDF',
+          message: `Could not send invoice ${invoiceId} to ${email}. Error: ${error.message}`
+        };
+      }
+    },
+  }),
+
   downloadInvoicePdf: tool({
     description: 'Download PDF version of an invoice from QuickBooks Online. Use this when the user wants to download or get a PDF copy of a specific invoice.',
     parameters: z.object({
