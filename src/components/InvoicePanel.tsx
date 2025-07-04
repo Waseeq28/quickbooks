@@ -170,7 +170,7 @@ export function InvoicePanel({
             className="gap-2 font-medium bg-gradient-to-r from-white to-purple-50/50 hover:from-purple-50 hover:to-purple-100/80 border-purple-200/60 hover:border-purple-300/80 shadow-md hover:shadow-lg transition-all duration-200 group"
           >
             <RefreshCw className={`h-4 w-4 text-purple-600 group-hover:text-purple-700 transition-colors ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'} duration-300`} />
-            <span className="text-purple-700 group-hover:text-purple-800 transition-colors">{isLoading ? 'Loading...' : 'Refresh'}</span>
+            <span className="text-purple-700 group-hover:text-purple-800 transition-colors">{isLoading ? 'Loading...' : 'Fetch'}</span>
           </Button>
         </div>
       </div>
