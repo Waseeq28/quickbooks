@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
-import { qbService } from '@/lib/quickbooks'
+import { getQuickBooksService } from '@/lib/quickbooks'
 import { transformQBInvoicesToSimple } from '@/lib/quickbooks-transform'
 
 export async function GET() {
   try {
+    const qbService = await getQuickBooksService()
     const rawInvoices = await qbService.getInvoices()
     const simplifiedInvoices = transformQBInvoicesToSimple(rawInvoices)
 

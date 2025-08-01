@@ -1,36 +1,64 @@
 import QuickBooks from 'node-quickbooks'
+import { DatabaseService } from './database'
 
 // QuickBooks client configuration
 export class QuickBooksService {
   private qbo: any
   
-  constructor() {
+  constructor(accessToken: string, refreshToken: string, realmId: string) {
     this.qbo = new QuickBooks(
       process.env.QB_CLIENT_ID!,
       process.env.QB_CLIENT_SECRET!,
-      process.env.QB_ACCESS_TOKEN!,
+      accessToken,
       false, // no token secret needed for OAuth 2.0
-      process.env.QB_REALM_ID!,
+      realmId,
       process.env.QB_ENVIRONMENT === 'sandbox', // true for sandbox
       false, // debug logging disabled
       null, // minor version (use default)
       '2.0', // oauth version
-      process.env.QB_REFRESH_TOKEN!
+      refreshToken
+    )
+  }
+
+  // Static method to create service instance from database
+  static async fromDatabase(): Promise<QuickBooksService> {
+    const connection = await DatabaseService.getQuickBooksConnection()
+    if (!connection) {
+      throw new Error('No QuickBooks connection found. Please connect your QuickBooks account first.')
+    }
+    
+    return new QuickBooksService(
+      connection.access_token,
+      connection.refresh_token,
+      connection.realm_id
     )
   }
 
   // Refresh the OAuth 2.0 access token
   private async refreshToken(): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.qbo.refreshAccessToken((err: any, authResponse: any) => {
+      this.qbo.refreshAccessToken(async (err: any, authResponse: any) => {
         if (err) {
           return reject(new Error(err.Fault?.Error?.[0]?.Detail || JSON.stringify(err)))
         }
         
-        // The library automatically updates the qbo instance with the new token
-        // but you could manually update them if needed from authResponse.getJson()
-        
-        resolve()
+        try {
+          // The node-quickbooks library automatically updates the qbo instance with new tokens
+          // We can get the updated tokens from the qbo instance itself
+          const accessToken = this.qbo.token
+          const refreshToken = this.qbo.refreshToken
+          
+          // Update tokens in database
+          await DatabaseService.updateQuickBooksTokens(
+            accessToken,
+            refreshToken,
+            undefined // We don't have expires_in from the refresh response
+          )
+          
+          resolve()
+        } catch (dbError) {
+          reject(new Error(`Failed to update tokens in database: ${dbError}`))
+        }
       })
     })
   }
@@ -187,5 +215,7 @@ export class QuickBooksService {
   }
 }
 
-// Singleton instance
-export const qbService = new QuickBooksService() 
+// Helper function to get service instance
+export const getQuickBooksService = async (): Promise<QuickBooksService> => {
+  return await QuickBooksService.fromDatabase()
+} 

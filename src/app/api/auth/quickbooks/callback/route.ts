@@ -1,7 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/utils/supabase/server'
+import { DatabaseService } from '@/lib/database'
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if user is authenticated
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      return new Response(`
+        <html>
+          <body>
+            <h1>Authentication Required</h1>
+            <p>Please sign in first before connecting to QuickBooks.</p>
+            <p><a href="/login">Sign In</a></p>
+          </body>
+        </html>
+      `, { headers: { 'Content-Type': 'text/html' }, status: 401 })
+    }
     const { searchParams } = new URL(request.url)
     const code = searchParams.get('code')
     const realmId = searchParams.get('realmId')
@@ -67,63 +84,70 @@ export async function GET(request: NextRequest) {
 
     const tokens = await tokenResponse.json()
 
-    // Display tokens for user to copy to .env.local
-    const responseHtml = `
-      <html>
-        <head>
-          <title>QuickBooks Connected Successfully!</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 40px; }
-            .success { color: green; }
-            .code-block { 
-              background: #f5f5f5; 
-              padding: 15px; 
-              border-radius: 5px; 
-              font-family: monospace;
-              white-space: pre-wrap;
-              margin: 20px 0;
-            }
-            .copy-btn {
-              background: #007cba;
-              color: white;
-              padding: 10px 20px;
-              border: none;
-              border-radius: 5px;
-              cursor: pointer;
-              margin: 10px 0;
-            }
-          </style>
-        </head>
-        <body>
-          <h1 class="success">✅ QuickBooks Connected Successfully!</h1>
-          
-          <h3>📋 Copy these credentials to your .env.local file:</h3>
-          
-          <div class="code-block" id="credentials">QB_ACCESS_TOKEN=${tokens.access_token}
-QB_REFRESH_TOKEN=${tokens.refresh_token}
-QB_REALM_ID=${realmId}</div>
+    // Save tokens to database
+    let responseHtml: string
+    try {
+      await DatabaseService.saveQuickBooksConnection(
+        tokens.access_token,
+        tokens.refresh_token,
+        realmId,
+        tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : undefined
+      )
 
-          <button class="copy-btn" onclick="copyToClipboard()">📋 Copy Credentials</button>
-          
-          <h3>📝 Next Steps:</h3>
-          <ol>
-            <li>Copy the credentials above to your <code>.env.local</code> file</li>
-            <li>Restart your development server: <code>npm run dev</code></li>
-            <li>Test the connection: <a href="/api/quickbooks/test" target="_blank">Test QuickBooks API</a></li>
-            <li><a href="/">Go back to your app</a></li>
-          </ol>
-
-          <script>
-            function copyToClipboard() {
-              const text = document.getElementById('credentials').textContent;
-              navigator.clipboard.writeText(text).then(() => {
-                alert('Credentials copied to clipboard!');
-              });
-            }
-          </script>
-        </body>
-      </html>
-    `
+      // Success page
+      responseHtml = `
+        <html>
+          <head>
+            <title>QuickBooks Connected Successfully!</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 40px; text-align: center; }
+              .success { color: green; }
+              .container { max-width: 600px; margin: 0 auto; }
+              .btn {
+                background: #007cba;
+                color: white;
+                padding: 12px 24px;
+                border: none;
+                border-radius: 5px;
+                text-decoration: none;
+                display: inline-block;
+                margin: 10px;
+                font-size: 16px;
+              }
+              .btn:hover { background: #005a8b; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1 class="success">✅ QuickBooks Connected Successfully!</h1>
+              
+              <p>Your QuickBooks account has been securely connected and linked to your profile.</p>
+              <p><strong>User:</strong> ${user.email}</p>
+              <p><strong>Company ID:</strong> ${realmId}</p>
+              
+              <div style="margin: 30px 0;">
+                <a href="/" class="btn">Go to Dashboard</a>
+              </div>
+              
+              <p style="color: #666; font-size: 14px;">
+                Your credentials are securely stored and encrypted. You can disconnect anytime from your dashboard.
+              </p>
+            </div>
+          </body>
+        </html>
+      `
+    } catch (dbError: any) {
+      return new Response(`
+        <html>
+          <body>
+            <h1>Connection Successful, but Storage Failed</h1>
+            <p>QuickBooks connection was successful, but we couldn't save your credentials.</p>
+            <p>Error: ${dbError.message}</p>
+            <p><a href="/connect">Try Again</a></p>
+          </body>
+        </html>
+      `, { headers: { 'Content-Type': 'text/html' }, status: 500 })
+    }
     const response = new NextResponse(responseHtml, { 
       headers: { 'Content-Type': 'text/html' }
     })
@@ -143,4 +167,4 @@ QB_REALM_ID=${realmId}</div>
       </html>
     `, { headers: { 'Content-Type': 'text/html' } })
   }
-} 
+}
