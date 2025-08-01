@@ -36,33 +36,33 @@ export function InvoicePanel({
     switch (status) {
       case "paid":
         return {
-          bgColor: "bg-green-100",
-          textColor: "text-green-700",
-          iconColor: "text-green-600",
+          bgColor: "bg-green-900/30",
+          textColor: "text-green-300",
+          iconColor: "text-green-400",
           icon: CheckCircle,
           label: "Paid"
         }
       case "pending":
         return {
-          bgColor: "bg-purple-100",
-          textColor: "text-purple-700",
-          iconColor: "text-purple-600",
+          bgColor: "bg-purple-900/30",
+          textColor: "text-purple-300",
+          iconColor: "text-purple-400",
           icon: Clock,
           label: "Pending"
         }
       case "overdue":
         return {
-          bgColor: "bg-red-100",
-          textColor: "text-red-700",
-          iconColor: "text-red-600",
+          bgColor: "bg-red-900/30",
+          textColor: "text-red-300",
+          iconColor: "text-red-400",
           icon: AlertTriangle,
           label: "Overdue"
         }
       default:
         return {
-          bgColor: "bg-gray-100",
-          textColor: "text-gray-700",
-          iconColor: "text-gray-600",
+          bgColor: "bg-muted/30",
+          textColor: "text-muted-foreground",
+          iconColor: "text-muted-foreground",
           icon: FileText,
           label: "Unknown"
         }
@@ -146,20 +146,19 @@ export function InvoicePanel({
   }
 
   return (
-    <div className="flex flex-col flex-1 bg-transparent overflow-hidden">
+    <div className="flex flex-col flex-1 bg-background overflow-hidden">
       {/* Header */}
-      <div className="relative px-6 py-4 bg-gradient-to-r from-purple-50/80 via-white/80 to-violet-50/80 backdrop-blur-sm border-b border-primary/10">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-violet-500/5"></div>
-        <div className="relative flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-violet-600 shadow-md">
-              <Receipt className="h-5 w-5 text-white" />
+      <div className="relative px-4 py-3 glass-effect border-b border-border/50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-violet-600 shadow-md">
+              <Receipt className="h-4 w-4 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-foreground">
+              <h2 className="text-lg font-bold text-foreground">
                 Invoices
               </h2>
-              <p className="text-xs text-muted-foreground font-medium">Track and manage your billing</p>
+              <p className="text-xs text-muted-foreground font-medium">Track and manage billing</p>
             </div>
           </div>
           <Button 
@@ -167,33 +166,33 @@ export function InvoicePanel({
             disabled={isLoading} 
             size="sm" 
             variant="outline" 
-            className="gap-2 font-medium bg-gradient-to-r from-white to-purple-50/50 hover:from-purple-50 hover:to-purple-100/80 border-purple-200/60 hover:border-purple-300/80 shadow-md hover:shadow-lg transition-all duration-200 group"
+            className="gap-2 font-medium bg-card/50 hover:bg-card border-border/50 hover:border-primary/50 shadow-md hover:shadow-lg transition-all duration-200 group"
           >
-            <RefreshCw className={`h-4 w-4 text-purple-600 group-hover:text-purple-700 transition-colors ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'} duration-300`} />
-            <span className="text-purple-700 group-hover:text-purple-800 transition-colors">{isLoading ? 'Loading...' : 'Fetch'}</span>
+            <RefreshCw className={`h-4 w-4 text-primary group-hover:text-primary/80 transition-colors ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'} duration-300`} />
+            <span className="text-foreground group-hover:text-primary transition-colors">{isLoading ? 'Loading...' : 'Fetch'}</span>
           </Button>
         </div>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Invoice List Sidebar */}
-        <div className="w-80 border-r border-primary/10 flex flex-col overflow-hidden bg-white/30">
+        <div className="w-72 border-r border-border/50 flex flex-col overflow-hidden bg-surface/30">
           <ScrollArea className="flex-1 h-0">
-            <div className="p-3 space-y-2">
+            <div className="p-2.5 space-y-1.5">
               {error && (
-                <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                <div className="p-2.5 text-sm text-red-300 bg-red-900/30 border border-red-800/50 rounded-lg flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4" />
                   <span>{error}</span>
                 </div>
               )}
               {!isLoading && !error && invoices.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-                    <FileText className="h-8 w-8 text-primary/60" />
+                <div className="text-center py-8">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted/20 mb-3">
+                    <FileText className="h-6 w-6 text-muted-foreground" />
                   </div>
-                  <h3 className="font-semibold text-muted-foreground">No Invoices Found</h3>
-                  <p className="text-sm text-muted-foreground/70 mt-1 max-w-[200px] mx-auto">
-                    Click refresh to fetch your invoices from QuickBooks
+                  <h3 className="font-semibold text-muted-foreground text-sm">No Invoices Found</h3>
+                  <p className="text-xs text-muted-foreground/70 mt-1 max-w-[180px] mx-auto">
+                    Click refresh to fetch invoices
                   </p>
                 </div>
               )}
@@ -202,21 +201,21 @@ export function InvoicePanel({
                 return (
                   <Card
                     key={invoice.id}
-                    className={`cursor-pointer transition-all duration-200 hover:shadow-lg border-0 ${
+                    className={`cursor-pointer transition-all duration-200 hover:shadow-lg border border-border/30 ${
                       selectedInvoice?.id === invoice.id 
-                        ? "ring-2 ring-primary shadow-lg bg-primary/5" 
-                        : "hover:bg-white/60 bg-white/40"
+                        ? "ring-2 ring-primary/50 shadow-lg bg-primary/10" 
+                        : "hover:bg-card/50 bg-card/30"
                     }`}
                     onClick={() => handleInvoiceSelection(invoice)}
                   >
-                    <CardContent className="p-3.5">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Hash className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="font-semibold text-sm">{invoice.id}</span>
+                    <CardContent className="p-3">
+                      <div className="flex items-start justify-between mb-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <Hash className="h-3 w-3 text-muted-foreground" />
+                          <span className="font-semibold text-sm text-foreground">{invoice.id}</span>
                         </div>
                         <span 
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${statusConfig.bgColor} ${statusConfig.textColor}`}
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium ${statusConfig.bgColor} ${statusConfig.textColor} border border-white/10`}
                         >
                           <statusConfig.icon className={`h-3 w-3 ${statusConfig.iconColor}`} />
                           {statusConfig.label}
@@ -226,7 +225,7 @@ export function InvoicePanel({
                         {invoice.customerName}
                       </p>
                       <div className="flex items-center justify-between">
-                        <p className="text-lg font-bold text-blue-600">
+                        <p className="text-base font-bold text-primary">
                           ${invoice.amount.toFixed(2)}
                         </p>
                         <p className="text-xs text-muted-foreground">
@@ -255,17 +254,16 @@ export function InvoicePanel({
               </div>
            )}
            {!isLoading && selectedInvoice ? (
-            <div>
-              <Card className="border-0 shadow-xl bg-gradient-to-br from-white via-gray-50/30 to-gray-100/50 relative overflow-hidden">
-                <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2220%22 height=%2220%22 viewBox=%220 0 20 20%22%3E%3Cg fill=%22%23f8fafc%22 fill-opacity=%220.03%22%3E%3Cpath d=%22M0 0h20v20H0z%22/%3E%3C/g%3E%3C/svg%3E')] opacity-40"></div>
-                <CardHeader className="pb-2 relative">
+            <div className="p-3">
+              <Card className="border border-border/50 shadow-xl bg-gradient-to-br from-card via-surface/30 to-card/50 relative overflow-hidden">
+                <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center space-x-3">
-                      <div className="flex items-center justify-center w-12 h-12 rounded-xl shadow-md bg-white/80">
-                        <FileText className="h-6 w-6 text-red-500" />
+                    <CardTitle className="flex items-center space-x-2.5">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-lg shadow-md bg-primary/10">
+                        <FileText className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <span className="text-2xl font-bold text-primary">
+                        <span className="text-xl font-bold text-foreground">
                           Invoice {selectedInvoice.id}
                         </span>
                         <p className="text-sm text-muted-foreground font-normal mt-0.5">
@@ -277,7 +275,7 @@ export function InvoicePanel({
                       const statusConfig = getStatusConfig(selectedInvoice.status)
                       return (
                         <span
-                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold shadow-md ${statusConfig.bgColor} ${statusConfig.textColor}`}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-semibold shadow-md ${statusConfig.bgColor} ${statusConfig.textColor} border border-white/10`}
                         >
                           <statusConfig.icon className={`h-4 w-4 ${statusConfig.iconColor}`} />
                           {statusConfig.label.toUpperCase()}
@@ -286,35 +284,35 @@ export function InvoicePanel({
                     })()}
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-3 pt-2 relative">
+                <CardContent className="space-y-2.5 pt-1.5">
                   {/* Customer Info & Dates */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                      <div className="flex items-center space-x-2 text-xs text-slate-600 font-medium mb-1.5">
-                        <User className="h-4 w-4 text-slate-700" />
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div className="bg-muted/30 p-2.5 rounded-lg border border-border/30">
+                      <div className="flex items-center space-x-1.5 text-xs text-muted-foreground font-medium mb-1">
+                        <User className="h-3.5 w-3.5" />
                         <span>Customer</span>
                       </div>
                       <p className="font-semibold text-sm text-foreground">{selectedInvoice.customerName}</p>
                     </div>
-                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                      <div className="flex items-center space-x-2 text-xs text-slate-600 font-medium mb-1.5">
-                        <DollarSign className="h-4 w-4 text-slate-700" />
+                    <div className="bg-muted/30 p-2.5 rounded-lg border border-border/30">
+                      <div className="flex items-center space-x-1.5 text-xs text-muted-foreground font-medium mb-1">
+                        <DollarSign className="h-3.5 w-3.5" />
                         <span>Total Amount</span>
                       </div>
-                      <p className="font-semibold text-sm text-blue-600">
+                      <p className="font-semibold text-sm text-primary">
                         ${selectedInvoice.amount.toFixed(2)}
                       </p>
                     </div>
-                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                      <div className="flex items-center space-x-2 text-xs text-slate-600 font-medium mb-1.5">
-                        <Calendar className="h-4 w-4 text-slate-700" />
+                    <div className="bg-muted/30 p-2.5 rounded-lg border border-border/30">
+                      <div className="flex items-center space-x-1.5 text-xs text-muted-foreground font-medium mb-1">
+                        <Calendar className="h-3.5 w-3.5" />
                         <span>Issue Date</span>
                       </div>
                       <p className="font-semibold text-sm text-foreground">{selectedInvoice.issueDate}</p>
                     </div>
-                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                      <div className="flex items-center space-x-2 text-xs text-slate-600 font-medium mb-1.5">
-                        <Calendar className="h-4 w-4 text-slate-700" />
+                    <div className="bg-muted/30 p-2.5 rounded-lg border border-border/30">
+                      <div className="flex items-center space-x-1.5 text-xs text-muted-foreground font-medium mb-1">
+                        <Calendar className="h-3.5 w-3.5" />
                         <span>Due Date</span>
                       </div>
                       <p className="font-semibold text-sm text-foreground">{selectedInvoice.dueDate}</p>
@@ -324,24 +322,24 @@ export function InvoicePanel({
                   <Separator className="bg-border/30" />
 
                   {/* Invoice Items */}
-                  <div className="space-y-3">
-                    <h3 className="font-bold text-lg text-foreground flex items-center gap-2">
-                      <Receipt className="h-5 w-5 text-primary" />
+                  <div className="space-y-2">
+                    <h3 className="font-bold text-base text-foreground flex items-center gap-1.5">
+                      <Receipt className="h-4 w-4 text-primary" />
                       Line Items
                     </h3>
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       {selectedInvoice.items.map((item, index) => (
                         <div 
                           key={index} 
-                          className="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-all"
+                          className="flex justify-between items-center p-3 bg-muted/30 rounded-lg border border-border/30 hover:bg-muted/40 transition-all"
                         >
                           <div className="flex-1">
-                            <p className="font-semibold text-foreground">{item.description}</p>
-                            <p className="text-sm text-slate-600 mt-0.5">
+                            <p className="font-semibold text-foreground text-sm">{item.description}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
                               {item.quantity} × ${item.rate.toFixed(2)}
                             </p>
                           </div>
-                          <p className="font-bold text-lg text-blue-600">
+                          <p className="font-bold text-base text-primary">
                             ${item.amount.toFixed(2)}
                           </p>
                         </div>
@@ -350,7 +348,7 @@ export function InvoicePanel({
                   </div>
 
                   {/* Actions */}
-                  <div className="pt-4 space-y-3 border-t border-border/30">
+                  <div className="pt-2.5 space-y-2.5 border-t border-border/30">
                     <div className="flex items-end gap-2">
                       <div className="flex-grow">
                         <label htmlFor="emailForInvoice" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
@@ -363,24 +361,25 @@ export function InvoicePanel({
                           value={emailToSend}
                           onChange={(e) => setEmailToSend(e.target.value)}
                           disabled={isSendingEmail}
-                          className="mt-1 bg-white/50 border-primary/20 focus:border-primary/40 focus:bg-white"
+                          className="mt-1 bg-input border-border/50 focus:border-primary/50 text-sm h-9"
                         />
                       </div>
                       
                       <Button
                         onClick={() => handleSendEmail(selectedInvoice.id)}
                         disabled={isSendingEmail || !emailToSend || !!sendEmailSuccess}
-                        className="gap-2 min-w-[100px]"
+                        className="gap-1.5 min-w-[90px] h-9"
                         variant={sendEmailSuccess ? "secondary" : "default"}
+                        size="sm"
                       >
                         {isSendingEmail ? (
-                          <RefreshCw className="h-4 w-4 animate-spin" />
+                          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
                         ) : sendEmailSuccess ? (
-                          <Check className="h-4 w-4" />
+                          <Check className="h-3.5 w-3.5" />
                         ) : (
-                          <Mail className="h-4 w-4" />
+                          <Mail className="h-3.5 w-3.5" />
                         )}
-                        <span>
+                        <span className="text-sm">
                           {isSendingEmail
                             ? 'Sending'
                             : sendEmailSuccess
@@ -392,21 +391,22 @@ export function InvoicePanel({
                       <Button 
                         onClick={() => handleDownloadPdf(selectedInvoice.id)}
                         variant="outline"
-                        className="gap-2"
+                        className="gap-1.5 h-9"
+                        size="sm"
                       >
-                        <Download className="h-4 w-4" />
-                        <span>PDF</span>
+                        <Download className="h-3.5 w-3.5" />
+                        <span className="text-sm">PDF</span>
                       </Button>
                     </div>
                     <div className="h-4">
                       {sendEmailError && (
-                        <p className="text-sm text-red-600 flex items-center gap-1 pl-1">
+                        <p className="text-xs text-red-400 flex items-center gap-1 pl-1">
                           <AlertTriangle className="h-3 w-3" />
                           {sendEmailError}
                         </p>
                       )}
                       {sendEmailSuccess && (
-                        <p className="text-sm text-emerald-600 flex items-center gap-1 pl-1">
+                        <p className="text-xs text-green-400 flex items-center gap-1 pl-1">
                           <Check className="h-3 w-3" />
                           {sendEmailSuccess}
                         </p>
@@ -419,13 +419,13 @@ export function InvoicePanel({
            ) : null}
            {!isLoading && !selectedInvoice && (
             <div className="flex items-center justify-center h-full">
-              <div className="text-center p-8">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 mb-4">
-                  <FileText className="h-10 w-10 text-primary/50" />
+              <div className="text-center p-6">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary/10 to-purple-500/10 mb-3">
+                  <FileText className="h-8 w-8 text-primary/60" />
                 </div>
-                <h3 className="text-xl font-bold text-muted-foreground">No Invoice Selected</h3>
-                <p className="text-sm text-muted-foreground/70 mt-2 max-w-xs mx-auto">
-                  {invoices.length > 0 ? 'Select an invoice from the sidebar to view details' : 'Click refresh to load your invoices'}
+                <h3 className="text-lg font-bold text-muted-foreground">No Invoice Selected</h3>
+                <p className="text-sm text-muted-foreground/70 mt-1.5 max-w-xs mx-auto">
+                  {invoices.length > 0 ? 'Select an invoice to view details' : 'Click refresh to load invoices'}
                 </p>
               </div>
             </div>

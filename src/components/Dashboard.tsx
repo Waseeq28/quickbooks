@@ -29,17 +29,19 @@ export function Dashboard({ invoices }: DashboardProps) {
       title: "Total Revenue",
       value: formatCurrency(totalAmount),
       icon: TrendingUp,
-      cardBg: "bg-gradient-to-br from-green-50 to-emerald-100",
-      iconBg: "bg-green-500",
+      cardBg: "bg-gradient-to-br from-green-900/20 to-emerald-900/30",
+      iconBg: "bg-gradient-to-br from-green-500 to-emerald-600",
       iconColor: "text-white",
+      accentColor: "text-green-400",
     },
     {
       title: "Outstanding",
       value: formatCurrency(totalDue),
       icon: DollarSign,
-      cardBg: "bg-gradient-to-br from-amber-50 to-orange-100",
-      iconBg: "bg-amber-500",
+      cardBg: "bg-gradient-to-br from-amber-900/20 to-orange-900/30",
+      iconBg: "bg-gradient-to-br from-amber-500 to-orange-600",
       iconColor: "text-white",
+      accentColor: "text-amber-400",
     },
   ]
 
@@ -48,51 +50,50 @@ export function Dashboard({ invoices }: DashboardProps) {
       label: "Paid",
       count: paidCount,
       icon: CheckCircle,
-      bgColor: "bg-green-100",
-      textColor: "text-green-700",
-      iconColor: "text-green-600",
+      bgColor: "bg-green-900/30",
+      textColor: "text-green-300",
+      iconColor: "text-green-400",
     },
     {
       label: "Pending",
       count: pendingCount,
       icon: Clock,
-      bgColor: "bg-purple-100",
-      textColor: "text-purple-700",
-      iconColor: "text-purple-600",
+      bgColor: "bg-purple-900/30",
+      textColor: "text-purple-300",
+      iconColor: "text-purple-400",
     },
     {
       label: "Overdue",
       count: overdueCount,
       icon: AlertTriangle,
-      bgColor: "bg-red-100",
-      textColor: "text-red-700",
-      iconColor: "text-red-600",
+      bgColor: "bg-red-900/30",
+      textColor: "text-red-300",
+      iconColor: "text-red-400",
     },
   ]
 
   return (
-    <div className="p-4 lg:p-6 bg-gray-50">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="p-3 lg:p-4 bg-surface/30">
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {/* Revenue Stats */}
         {revenueStats.map((stat, index) => (
           <Card 
             key={stat.title} 
-            className={`group hover:scale-[1.02] cursor-pointer border-0 shadow-lg ${stat.cardBg} transition-all duration-300`}
+            className={`group hover:scale-[1.02] cursor-pointer border border-border/30 shadow-lg ${stat.cardBg} transition-all duration-300 animate-slide-up`}
             style={{
-              animationDelay: `${index * 50}ms`,
-              animation: 'fadeInUp 0.5s ease-out'
+              animationDelay: `${index * 100}ms`
             }}
           >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 {stat.title}
               </CardTitle>
-              <div className={`flex items-center justify-center w-12 h-12 rounded-xl ${stat.iconBg} group-hover:scale-110 transition-transform shadow-md`}>
-                <stat.icon className={`h-6 w-6 ${stat.iconColor}`} />
+              <div className={`flex items-center justify-center w-10 h-10 rounded-lg ${stat.iconBg} group-hover:scale-110 transition-transform shadow-md`}>
+                <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold tracking-tight">
+            <CardContent className="pb-3">
+              <div className={`text-xl font-bold tracking-tight ${stat.accentColor || 'text-foreground'}`}>
                 {stat.value}
               </div>
             </CardContent>
@@ -101,29 +102,28 @@ export function Dashboard({ invoices }: DashboardProps) {
 
         {/* Combined Invoice Card */}
         <Card 
-          className="group hover:scale-[1.02] cursor-pointer border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-100 transition-all duration-300"
+          className="group hover:scale-[1.02] cursor-pointer border border-border/30 shadow-lg bg-gradient-to-br from-blue-900/20 to-indigo-900/30 transition-all duration-300 animate-slide-up"
           style={{
-            animationDelay: '100ms',
-            animation: 'fadeInUp 0.5s ease-out'
+            animationDelay: '200ms'
           }}
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Invoices
             </CardTitle>
-            <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500 group-hover:scale-110 transition-transform shadow-md">
-              <FileText className="h-6 w-6 text-white" />
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 group-hover:scale-110 transition-transform shadow-md">
+              <FileText className="h-5 w-5 text-white" />
             </div>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="text-2xl font-bold tracking-tight">
+          <CardContent className="space-y-2.5 pb-3">
+            <div className="text-xl font-bold tracking-tight text-blue-400">
               {totalInvoices}
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {invoiceStatusData.map((status) => (
                 <span 
                   key={status.label}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${status.bgColor} ${status.textColor}`}
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium ${status.bgColor} ${status.textColor} border border-white/10`}
                 >
                   <status.icon className={`h-3 w-3 ${status.iconColor}`} />
                   {status.label}: {status.count}
@@ -133,19 +133,6 @@ export function Dashboard({ invoices }: DashboardProps) {
           </CardContent>
         </Card>
       </div>
-      
-      <style jsx>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </div>
   )
 } 
