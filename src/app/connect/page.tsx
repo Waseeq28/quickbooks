@@ -1,12 +1,42 @@
 "use client"
 
+import { useState, useEffect } from 'react'
+import { createClient } from '@/utils/supabase/client'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ExternalLink, ShieldCheck, Zap } from "lucide-react"
+import { ExternalLink, ShieldCheck, Zap, User } from "lucide-react"
+import { useRouter } from 'next/navigation'
 
 export default function ConnectPage() {
+  const [user, setUser] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const supabase = createClient()
+  const router = useRouter()
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+      setIsLoading(false)
+    }
+    
+    getUser()
+  }, [supabase])
+
   const handleConnect = () => {
+    if (!user) {
+      router.push('/login')
+      return
+    }
     window.location.href = '/api/auth/quickbooks'
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
   }
 
   return (
@@ -25,6 +55,16 @@ export default function ConnectPage() {
         </CardHeader>
         
         <CardContent className="space-y-6">
+          {user && (
+            <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg border border-green-200">
+              <User className="w-5 h-5 text-green-600" />
+              <div>
+                <p className="text-sm font-medium text-green-800">Signed in as</p>
+                <p className="text-sm text-green-600">{user.email}</p>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-3">
             <div className="flex items-center space-x-3 text-sm text-gray-600">
               <Zap className="w-4 h-4 text-green-500" />
@@ -46,12 +86,16 @@ export default function ConnectPage() {
             size="lg"
           >
             <ExternalLink className="w-5 h-5 mr-2" />
-            Connect to QuickBooks Sandbox
+            {user ? 'Connect to QuickBooks Sandbox' : 'Sign in to Connect'}
           </Button>
 
           <div className="text-xs text-gray-500 text-center">
-            You'll be redirected to QuickBooks to authorize access. 
-            After connecting, you'll get credentials to paste in your .env.local file.
+            {user ? (
+              <>You'll be redirected to QuickBooks to authorize access. 
+              After connecting, your credentials will be securely stored.</>
+            ) : (
+              <>Please sign in with Google first to connect your QuickBooks account.</>
+            )}
           </div>
         </CardContent>
       </Card>

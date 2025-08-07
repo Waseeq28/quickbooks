@@ -1,8 +1,17 @@
 import { NextResponse } from 'next/server'
+import { createClient } from '@/utils/supabase/server'
 import crypto from 'crypto'
 
 export async function GET() {
   try {
+    // Check if user is authenticated
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      return NextResponse.json({ error: 'User not authenticated' }, { status: 401 })
+    }
+
     const clientId = process.env.QB_CLIENT_ID
     if (!clientId) {
       return NextResponse.json({ error: 'QB_CLIENT_ID not configured' }, { status: 500 })
@@ -34,4 +43,4 @@ export async function GET() {
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-} 
+}

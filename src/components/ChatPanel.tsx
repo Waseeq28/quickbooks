@@ -45,16 +45,16 @@ export function ChatPanel({
   };
 
   return (
-    <div className="h-full flex flex-col bg-white">
+    <div className="h-full flex flex-col bg-card">
       {/* Header */}
-      <div className="px-5 py-4 bg-white border-b border-gray-200">
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center justify-center w-9 h-9 bg-cyan-100 rounded-lg shadow-sm">
-            <Bot className="h-5 w-5 text-cyan-700" />
+      <div className="px-4 py-3 glass-effect border-b border-border/50">
+        <div className="flex items-center space-x-2.5">
+          <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg shadow-sm">
+            <Bot className="h-4 w-4 text-white" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-cyan-700">
-              Quickbooks AI
+            <h2 className="text-base font-bold text-foreground">
+              QuickBooks AI
             </h2>
           </div>
         </div>
@@ -63,35 +63,35 @@ export function ChatPanel({
       {/* Messages Area */}
       <div className="flex-1 min-h-0">
         <ScrollArea className="h-full" ref={scrollAreaRef}>
-          <div className="p-4 space-y-4">
+          <div className="p-3 space-y-3">
             {/* Welcome Message */}
             {messages.length === 0 && (
-              <Card className="border-0 shadow-sm bg-blue-50">
-                <CardContent className="p-5">
-                  <div className="space-y-4">
+              <Card className="border border-border/30 shadow-sm bg-gradient-to-br from-primary/5 to-purple-500/5">
+                <CardContent className="p-4">
+                  <div className="space-y-3">
                     <div>
-                      <h3 className="font-bold text-lg text-foreground">
+                      <h3 className="font-bold text-base text-foreground">
                         Welcome! I'm your AI Assistant
                       </h3>
                       <p className="text-sm text-muted-foreground mt-1">
-                        I can help you manage and analyze your QuickBooks invoices
+                        I can help manage and analyze your QuickBooks invoices
                       </p>
                     </div>
-                    <div className="grid grid-cols-1 gap-2.5">
-                      <div className="flex items-center space-x-3 p-3 bg-white/60 rounded-lg">
-                        <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                    <div className="grid grid-cols-1 gap-2">
+                      <div className="flex items-center space-x-2.5 p-2.5 bg-card/40 rounded-lg border border-border/20">
+                        <FileText className="h-4 w-4 text-primary flex-shrink-0" />
                         <span className="text-sm font-medium text-foreground">
                           Fetch and view all invoices
                         </span>
                       </div>
-                      <div className="flex items-center space-x-3 p-3 bg-white/60 rounded-lg">
-                        <Zap className="h-4 w-4 text-cyan-700 flex-shrink-0" />
+                      <div className="flex items-center space-x-2.5 p-2.5 bg-card/40 rounded-lg border border-border/20">
+                        <Zap className="h-4 w-4 text-cyan-400 flex-shrink-0" />
                         <span className="text-sm font-medium text-foreground">
                           Find specific invoices instantly
                         </span>
                       </div>
-                      <div className="flex items-center space-x-3 p-3 bg-white/60 rounded-lg">
-                        <TrendingUp className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      <div className="flex items-center space-x-2.5 p-2.5 bg-card/40 rounded-lg border border-border/20">
+                        <TrendingUp className="h-4 w-4 text-green-400 flex-shrink-0" />
                         <span className="text-sm font-medium text-foreground">
                           Analyze data and get insights
                         </span>
@@ -119,14 +119,14 @@ export function ChatPanel({
                 }`}
               >
                 <div
-                  className={`max-w-[80%] px-4 py-3 rounded-2xl ${
+                  className={`max-w-[80%] px-3 py-2.5 rounded-xl ${
                     message.role === "user"
-                      ? "bg-blue-100 text-blue-900 shadow-sm"
-                      : "bg-gray-50 border border-gray-200 shadow-sm text-gray-900"
+                      ? "bg-primary/10 text-primary-foreground shadow-sm border border-primary/20"
+                      : "bg-muted/50 border border-border/30 shadow-sm text-foreground"
                   }`}
                 >
                   <p className={`text-sm leading-relaxed whitespace-pre-wrap break-words ${
-                    message.role === "user" ? "text-blue-900" : "text-gray-900"
+                    message.role === "user" ? "text-foreground" : "text-foreground"
                   }`}>
                     {typeof message.content === "string"
                       ? message.content
@@ -135,8 +135,8 @@ export function ChatPanel({
                 </div>
 
                 {message.role === "user" && (
-                  <div className="flex items-start justify-center w-8 h-8 bg-blue-100 rounded-lg flex-shrink-0 mt-1">
-                    <User className="h-4 w-4 text-blue-700 mt-1.5" />
+                  <div className="flex items-start justify-center w-7 h-7 bg-primary/10 rounded-lg flex-shrink-0 mt-1 border border-primary/20">
+                    <User className="h-3.5 w-3.5 text-primary mt-1.5" />
                   </div>
                 )}
               </div>
@@ -145,14 +145,14 @@ export function ChatPanel({
             {/* Loading indicator */}
             {isLoading && (
               <div className="flex gap-3 justify-start">
-                <div className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl shadow-sm">
+                <div className="px-3 py-2.5 bg-muted/50 border border-border/30 rounded-xl shadow-sm">
                   <div className="flex items-center space-x-2">
                     <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                     </div>
-                    <span className="text-sm text-gray-600 font-medium ml-2">
+                    <span className="text-sm text-muted-foreground font-medium ml-2">
                       AI is thinking
                     </span>
                   </div>
@@ -163,30 +163,30 @@ export function ChatPanel({
         </ScrollArea>
       </div>
 
-      <Separator className="bg-gray-200" />
+      <Separator className="bg-border/30" />
 
       {/* Input Area */}
-      <div className="p-4 bg-white/80 backdrop-blur-sm space-y-3">
+      <div className="p-3 glass-effect space-y-2.5">
         <form onSubmit={handleFormSubmit} className="flex space-x-2">
           <Input
             value={input}
             onChange={handleInputChange}
             placeholder="Ask me anything about your invoices..."
             disabled={isLoading}
-            className="flex-1 bg-white/70 border-primary/20 focus:border-primary/40 placeholder:text-muted-foreground/60 text-sm"
+            className="flex-1 bg-input border-border/50 focus:border-primary/50 placeholder:text-muted-foreground/60 text-sm h-9"
           />
           <Button
             type="submit"
             disabled={isLoading || !input.trim()}
             size="sm"
-            className="shadow-sm"
+            className="shadow-sm h-9"
           >
             <Send className="h-4 w-4" />
           </Button>
         </form>
 
         {/* Quick Actions */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           <Button
             variant="outline"
             size="sm"
@@ -196,7 +196,7 @@ export function ChatPanel({
               } as React.ChangeEvent<HTMLInputElement>)
             }
             disabled={isLoading}
-            className="text-xs font-medium hover:bg-primary/5 hover:border-primary/30 h-8 px-3"
+            className="text-xs font-medium hover:bg-primary/10 hover:border-primary/30 hover:text-primary h-7 px-2.5"
           >
             Fetch Invoices
           </Button>
@@ -209,7 +209,7 @@ export function ChatPanel({
               } as React.ChangeEvent<HTMLInputElement>)
             }
             disabled={isLoading}
-            className="text-xs font-medium hover:bg-red-50 hover:border-red-300 hover:text-red-700 h-8 px-3"
+            className="text-xs font-medium hover:bg-red-900/20 hover:border-red-500/30 hover:text-red-400 h-7 px-2.5"
           >
             Overdue
           </Button>
@@ -222,7 +222,7 @@ export function ChatPanel({
               } as React.ChangeEvent<HTMLInputElement>)
             }
             disabled={isLoading}
-            className="text-xs font-medium hover:bg-amber-50 hover:border-amber-300 hover:text-amber-700 h-8 px-3"
+            className="text-xs font-medium hover:bg-amber-900/20 hover:border-amber-500/30 hover:text-amber-400 h-7 px-2.5"
           >
             Pending Total
           </Button>
