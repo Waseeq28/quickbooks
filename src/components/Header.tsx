@@ -1,6 +1,34 @@
+"use client"
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/utils/supabase/client'
 import { FileText, Sparkles, Zap } from "lucide-react"
+import { UserMenu } from './UserMenu'
 
 export function Header() {
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const supabase = createClient()
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+      setLoading(false)
+    }
+
+    getUser()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setUser(session?.user ?? null)
+        setLoading(false)
+      }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [supabase.auth])
+
   return (
     <header className="sticky top-0 z-50 w-full glass-effect border-b border-border/50 shadow-lg">
       <div className="px-4 lg:px-6">
@@ -31,6 +59,10 @@ export function Header() {
               </div>
               <span className="text-xs font-medium text-muted-foreground">Live</span>
             </div>
+            
+            {!loading && user && (
+              <UserMenu user={user} />
+            )}
           </div>
         </div>
       </div>
