@@ -51,8 +51,16 @@ export function UserMenu({ user }: UserMenuProps) {
       setCurrentTeamName(getCurrentTeamName());
     };
 
+    const handleTeamCreated = () => {
+      setCurrentTeamName(getCurrentTeamName());
+    };
+
     window.addEventListener('teamSwitched', handleTeamSwitch);
-    return () => window.removeEventListener('teamSwitched', handleTeamSwitch);
+    window.addEventListener('teamCreated', handleTeamCreated);
+    return () => {
+      window.removeEventListener('teamSwitched', handleTeamSwitch);
+      window.removeEventListener('teamCreated', handleTeamCreated);
+    };
   }, []);
 
   const handleUserUpdate = () => {

@@ -17,6 +17,7 @@ import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
 import { getUserTeams, switchCurrentTeam } from "@/lib/mock-data";
 import { useEffect } from "react";
+import { CreateTeamDialog } from "@/components/CreateTeamDialog";
 
 interface ProfileDialogProps {
   open: boolean;
@@ -38,6 +39,7 @@ export function ProfileDialog({ open, onOpenChange, user, onUserUpdate }: Profil
   const [name, setName] = useState(user.user_metadata?.full_name || "");
   const [isLoading, setIsLoading] = useState(false);
   const [userTeams, setUserTeams] = useState(getUserTeams());
+  const [createTeamOpen, setCreateTeamOpen] = useState(false);
   const supabase = createClient();
 
   // Listen for team switching events
@@ -46,8 +48,16 @@ export function ProfileDialog({ open, onOpenChange, user, onUserUpdate }: Profil
       setUserTeams(getUserTeams());
     };
 
+    const handleTeamCreated = () => {
+      setUserTeams(getUserTeams());
+    };
+
     window.addEventListener('teamSwitched', handleTeamSwitch);
-    return () => window.removeEventListener('teamSwitched', handleTeamSwitch);
+    window.addEventListener('teamCreated', handleTeamCreated);
+    return () => {
+      window.removeEventListener('teamSwitched', handleTeamSwitch);
+      window.removeEventListener('teamCreated', handleTeamCreated);
+    };
   }, []);
 
   const handleTeamSwitch = (teamId: string) => {
@@ -101,7 +111,6 @@ export function ProfileDialog({ open, onOpenChange, user, onUserUpdate }: Profil
       <DialogContent className="border-2 border-gray-800">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
             Profile Settings
           </DialogTitle>
           <DialogDescription>
@@ -222,10 +231,21 @@ export function ProfileDialog({ open, onOpenChange, user, onUserUpdate }: Profil
              </div>
 
              <div className="pt-2 border-t border-border/30">
-               <Button variant="outline" size="sm" className="w-full gap-2">
-                 <Plus className="h-4 w-4" />
-                 Join Another Team
-               </Button>
+               <div className="flex gap-2">
+                 <Button 
+                   variant="outline" 
+                   size="sm" 
+                   className="flex-1 gap-2"
+                   onClick={() => setCreateTeamOpen(true)}
+                 >
+                   <Plus className="h-4 w-4" />
+                   Create New Team
+                 </Button>
+                 <Button variant="outline" size="sm" className="flex-1 gap-2">
+                   <Plus className="h-4 w-4" />
+                   Join Another Team
+                 </Button>
+               </div>
              </div>
            </div>
 
@@ -251,6 +271,12 @@ export function ProfileDialog({ open, onOpenChange, user, onUserUpdate }: Profil
           )}
         </div>
       </DialogContent>
+
+      <CreateTeamDialog 
+        open={createTeamOpen}
+        onOpenChange={setCreateTeamOpen}
+        onTeamCreated={onUserUpdate}
+      />
     </Dialog>
   );
 }

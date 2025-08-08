@@ -39,19 +39,19 @@ export const mockTeams: MockTeam[] = [
         id: "member-2",
         name: "John Smith",
         email: "john@acme.com",
-        role: "Developer",
+        role: "Accountant",
       },
       {
         id: "member-3",
         name: "Sarah Johnson",
         email: "sarah@acme.com",
-        role: "Designer",
+        role: "Viewer",
       },
       {
         id: "member-4",
         name: "Mike Wilson",
         email: "mike@acme.com",
-        role: "Developer",
+        role: "Accountant",
       },
     ],
   },
@@ -65,7 +65,7 @@ export const mockTeams: MockTeam[] = [
         id: "member-5",
         name: "You",
         email: "you@startupxyz.com",
-        role: "Member",
+        role: "Viewer",
       },
       {
         id: "member-6",
@@ -77,7 +77,7 @@ export const mockTeams: MockTeam[] = [
         id: "member-7",
         name: "Emma Davis",
         email: "emma@startupxyz.com",
-        role: "Member",
+        role: "Accountant",
       },
     ],
   },
@@ -91,13 +91,13 @@ export const mockTeams: MockTeam[] = [
         id: "member-8",
         name: "You",
         email: "you@freelance.com",
-        role: "Owner",
+        role: "Admin",
       },
       {
         id: "member-9",
         name: "David Brown",
         email: "david@freelance.com",
-        role: "Contractor",
+        role: "Viewer",
       },
     ],
   },
@@ -112,12 +112,12 @@ export const mockUserTeams: UserTeamInfo[] = [
   },
   {
     teamId: "team-2",
-    role: "Member",
+    role: "Viewer",
     isCurrent: false,
   },
   {
     teamId: "team-3",
-    role: "Owner",
+    role: "Admin",
     isCurrent: false,
   },
 ];
@@ -164,4 +164,43 @@ export const switchCurrentTeam = (teamId: string) => {
 export const getCurrentTeamName = () => {
   const currentTeam = getCurrentTeam();
   return currentTeam?.name || "No Team Selected";
+};
+
+// Create new team function
+export const createNewTeam = (teamName: string) => {
+  const newTeamId = `team-${Date.now()}`; // Generate unique ID
+  const newMemberId = `member-${Date.now()}`;
+  
+  // Create new team
+  const newTeam: MockTeam = {
+    id: newTeamId,
+    name: teamName,
+    description: "New team",
+    memberCount: 1,
+    members: [
+      {
+        id: newMemberId,
+        name: "You",
+        email: "you@newteam.com",
+        role: "Admin",
+      },
+    ],
+  };
+  
+  // Add team to mock teams
+  mockTeams.push(newTeam);
+  
+  // Add user association to new team
+  const newUserTeam: UserTeamInfo = {
+    teamId: newTeamId,
+    role: "Admin",
+    isCurrent: false,
+  };
+  
+  mockUserTeams.push(newUserTeam);
+  
+  // Trigger event to notify components
+  window.dispatchEvent(new CustomEvent('teamCreated', { detail: { teamId: newTeamId } }));
+  
+  return newTeamId;
 };
