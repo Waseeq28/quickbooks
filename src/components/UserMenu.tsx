@@ -16,7 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ProfileDialog } from "@/components/ProfileDialog";
 import { TeamSettingsDialog } from "@/components/TeamSettingsDialog";
 import { toast } from "sonner";
-import { getCurrentTeamName } from "@/lib/mock-data";
+// Supabase-backed current team name will be loaded dynamically
 import { useEffect } from "react";
 import {
   LogOut,
@@ -41,31 +41,59 @@ export function UserMenu({ user }: UserMenuProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [teamSettingsOpen, setTeamSettingsOpen] = useState(false);
-  const [currentTeamName, setCurrentTeamName] = useState(getCurrentTeamName());
+  const [currentTeamName, setCurrentTeamName] = useState("No Team Selected");
   const router = useRouter();
   const supabase = createClient();
 
-  // Listen for team switching events
+  // Load current team name and refresh on team events
   useEffect(() => {
-    const handleTeamSwitch = () => {
-      setCurrentTeamName(getCurrentTeamName());
+    const load = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setCurrentTeamName("No Team Selected");
+        return;
+      }
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('current_team_id, team:current_team_id(name)')
+        .eq('id', user.id)
+        .single();
+      if (error) {
+        setCurrentTeamName("No Team Selected");
+        return;
+      }
+      // @ts-expect-error - PostgREST nested select alias
+      const name = data?.team?.name as string | undefined;
+      setCurrentTeamName(name || "No Team Selected");
     };
 
-    const handleTeamCreated = () => {
-      setCurrentTeamName(getCurrentTeamName());
-    };
+    load();
 
+    const handleTeamSwitch = () => { load(); };
+    const handleTeamCreated = () => { load(); };
     window.addEventListener('teamSwitched', handleTeamSwitch);
     window.addEventListener('teamCreated', handleTeamCreated);
     return () => {
       window.removeEventListener('teamSwitched', handleTeamSwitch);
       window.removeEventListener('teamCreated', handleTeamCreated);
     };
-  }, []);
+  }, [supabase]);
 
-  const handleUserUpdate = () => {
-    // Update current team name immediately
-    setCurrentTeamName(getCurrentTeamName());
+  const handleUserUpdate = async () => {
+    // Refresh from DB
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setCurrentTeamName("No Team Selected");
+      return;
+    }
+    const { data } = await supabase
+      .from('profiles')
+      .select('current_team_id, team:current_team_id(name)')
+      .eq('id', user.id)
+      .single();
+    // @ts-expect-error - PostgREST nested select alias
+    const name = data?.team?.name as string | undefined;
+    setCurrentTeamName(name || "No Team Selected");
   };
 
   const handleSignOut = async () => {
