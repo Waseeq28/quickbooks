@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Building2, Users, UserCheck, Plus, Edit3, Trash2 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
-import { getCurrentTeam, getTeamMembers, mockUserTeams } from "@/lib/mock-data";
+import { fetchUserTeamsSummary } from "@/lib/teams";
 import { useEffect } from "react";
 import { InviteMemberDialog } from "@/components/InviteMemberDialog";
 
@@ -51,64 +51,88 @@ export function TeamSettingsDialog({
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [currentTeam, setCurrentTeam] = useState(getCurrentTeam());
-  const [currentTeamName, setCurrentTeamName] = useState(
-    currentTeam?.name || "No Team Selected"
-  );
-  const [currentTeamRole, setCurrentTeamRole] = useState(
-    currentTeam
-      ? mockUserTeams.find((ut) => ut.teamId === currentTeam.id)?.role ||
-          "Viewer"
-      : "Viewer"
-  );
-  const [teamMembers, setTeamMembers] = useState(
-    currentTeam ? getTeamMembers(currentTeam.id) : []
-  );
+  const [currentTeamId, setCurrentTeamId] = useState<string | null>(null);
+  const [currentTeamName, setCurrentTeamName] = useState("No Team Selected");
+  const [currentTeamRole, setCurrentTeamRole] = useState("Viewer");
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const supabase = createClient();
 
-  // Listen for team switching events
+  // Load current team and members; listen for team switching events
   useEffect(() => {
-    const handleTeamSwitch = () => {
-      const newCurrentTeam = getCurrentTeam();
-      setCurrentTeam(newCurrentTeam);
-      setCurrentTeamName(newCurrentTeam?.name || "No Team Selected");
-      setCurrentTeamRole(
-        newCurrentTeam
-          ? mockUserTeams.find((ut) => ut.teamId === newCurrentTeam.id)?.role ||
-              "Viewer"
-          : "Viewer"
-      );
-      setTeamMembers(newCurrentTeam ? getTeamMembers(newCurrentTeam.id) : []);
-      // Reset form fields to new team data
-      setTeamName(newCurrentTeam?.name || "No Team Selected");
-      setUserRole(
-        newCurrentTeam
-          ? mockUserTeams.find((ut) => ut.teamId === newCurrentTeam.id)?.role ||
-              "Viewer"
-          : "Viewer"
-      );
+    const load = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get current team id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('current_team_id')
+        .eq('id', user.id)
+        .single();
+      const teamId = (profile?.current_team_id as string) || null;
+      setCurrentTeamId(teamId);
+
+      if (!teamId) {
+        setCurrentTeamName("No Team Selected");
+        setTeamMembers([]);
+        return;
+      }
+
+      // Get team name
+      const { data: teamRow } = await supabase
+        .from('teams')
+        .select('id, name')
+        .eq('id', teamId)
+        .single();
+      setCurrentTeamName(teamRow?.name || "Team");
+
+      // Get user's role in current team
+      const { data: myMember } = await supabase
+        .from('team_members')
+        .select('role')
+        .eq('team_id', teamId)
+        .eq('user_id', user.id)
+        .single();
+      setCurrentTeamRole((myMember?.role as string) || 'Viewer');
+
+      // Get members of current team
+      const { data: memberRows } = await supabase
+        .from('team_members')
+        .select('user_id, role')
+        .eq('team_id', teamId);
+
+      // Fetch teammate profiles and emails
+      const userIds = (memberRows || []).map((m: any) => m.user_id as string);
+      let profiles: Array<{ id: string; full_name: string | null; avatar_url: string | null; email: string | null }> = [];
+      if (userIds.length > 0) {
+        const { data: profileRows } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url, email')
+          .in('id', userIds);
+        profiles = profileRows || [];
+      }
+
+      const profileMap = new Map(profiles.map((p) => [p.id, p]));
+      const members: TeamMember[] = (memberRows || []).map((m: any) => {
+        const p = profileMap.get(m.user_id as string);
+        return {
+          id: m.user_id as string,
+          name: p?.full_name || 'Member',
+          email: p?.email || '',
+          role: m.role as string,
+          avatar: p?.avatar_url || undefined,
+        };
+      });
+      setTeamMembers(members);
+
+      // Reset form defaults
+      setTeamName(teamRow?.name || "Team");
+      setUserRole((myMember?.role as string) || 'Viewer');
     };
 
-    const handleTeamCreated = () => {
-      const newCurrentTeam = getCurrentTeam();
-      setCurrentTeam(newCurrentTeam);
-      setCurrentTeamName(newCurrentTeam?.name || "No Team Selected");
-      setCurrentTeamRole(
-        newCurrentTeam
-          ? mockUserTeams.find((ut) => ut.teamId === newCurrentTeam.id)?.role ||
-              "Viewer"
-          : "Viewer"
-      );
-      setTeamMembers(newCurrentTeam ? getTeamMembers(newCurrentTeam.id) : []);
-      // Reset form fields to new team data
-      setTeamName(newCurrentTeam?.name || "No Team Selected");
-      setUserRole(
-        newCurrentTeam
-          ? mockUserTeams.find((ut) => ut.teamId === newCurrentTeam.id)?.role ||
-              "Viewer"
-          : "Viewer"
-      );
-    };
+    const handleTeamSwitch = () => { load(); };
+    const handleTeamCreated = () => { load(); };
+    load();
 
     window.addEventListener("teamSwitched", handleTeamSwitch);
     window.addEventListener("teamCreated", handleTeamCreated);
@@ -116,7 +140,7 @@ export function TeamSettingsDialog({
       window.removeEventListener("teamSwitched", handleTeamSwitch);
       window.removeEventListener("teamCreated", handleTeamCreated);
     };
-  }, []);
+  }, [supabase]);
 
   // Initialize form fields with current team data
   const [teamName, setTeamName] = useState(currentTeamName);
