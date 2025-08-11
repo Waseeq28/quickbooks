@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Building2, Plus } from "lucide-react";
-import { createNewTeam } from "@/lib/mock-data";
+import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
 
 interface CreateTeamDialogProps {
@@ -24,6 +24,7 @@ interface CreateTeamDialogProps {
 export function CreateTeamDialog({ open, onOpenChange, onTeamCreated }: CreateTeamDialogProps) {
   const [teamName, setTeamName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const supabase = createClient();
 
   const handleCreateTeam = async () => {
     if (!teamName.trim()) {
@@ -34,16 +35,22 @@ export function CreateTeamDialog({ open, onOpenChange, onTeamCreated }: CreateTe
     setIsLoading(true);
     
     try {
-      // Create the new team
-      const newTeamId = createNewTeam(teamName.trim());
-      
-      toast.success("Team created successfully!");
-      setTeamName("");
-      onOpenChange(false);
-      onTeamCreated?.();
-    } catch (error) {
+      const { data: newTeamId, error } = await supabase.rpc('create_team', { team_name: teamName.trim() });
+      if (error) {
+        toast.error("Failed to create team", { description: error.message });
+      } else {
+        // Notify any global listeners (mirrors previous mock event)
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('teamCreated', { detail: { teamId: newTeamId } }));
+        }
+        toast.success("Team created successfully!");
+        setTeamName("");
+        onOpenChange(false);
+        onTeamCreated?.();
+      }
+    } catch (error: any) {
       toast.error("Failed to create team", {
-        description: "An unexpected error occurred",
+        description: error?.message ?? "An unexpected error occurred",
       });
     }
     
