@@ -19,6 +19,7 @@ import type { UserTeamSummary } from "@/lib/teams";
 import { fetchUserTeamsSummary } from "@/lib/teams";
 import { useEffect } from "react";
 import { CreateTeamDialog } from "@/components/CreateTeamDialog";
+import { useAuthz } from "@/components/AuthzProvider";
 
 interface ProfileDialogProps {
   open: boolean;
@@ -42,6 +43,7 @@ export function ProfileDialog({ open, onOpenChange, user, onUserUpdate }: Profil
   const [userTeams, setUserTeams] = useState<UserTeamSummary[]>([]);
   const [createTeamOpen, setCreateTeamOpen] = useState(false);
   const supabase = createClient();
+  const { can } = useAuthz();
 
   // Load teams and listen for team events
   useEffect(() => {
@@ -201,9 +203,7 @@ export function ProfileDialog({ open, onOpenChange, user, onUserUpdate }: Profil
                  <Users className="h-5 w-5" />
                  Your Teams
                </h3>
-               <span className="text-sm text-muted-foreground">
-                 {userTeams.length} teams
-               </span>
+                <span className="text-sm text-muted-foreground">{userTeams.length} teams</span>
              </div>
 
              <div className="space-y-2">
@@ -259,15 +259,17 @@ export function ProfileDialog({ open, onOpenChange, user, onUserUpdate }: Profil
 
              <div className="pt-2 border-t border-border/30">
                <div className="flex gap-2">
-                 <Button 
-                   variant="outline" 
-                   size="sm" 
-                   className="flex-1 gap-2"
-                   onClick={() => setCreateTeamOpen(true)}
-                 >
-                   <Plus className="h-4 w-4" />
-                   Create New Team
-                 </Button>
+                  {can('team:update') && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1 gap-2"
+                      onClick={() => setCreateTeamOpen(true)}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Create New Team
+                    </Button>
+                  )}
                  <Button variant="outline" size="sm" className="flex-1 gap-2">
                    <Plus className="h-4 w-4" />
                    Join Another Team
