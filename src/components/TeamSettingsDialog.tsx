@@ -16,6 +16,8 @@ import { Building2, Users, UserCheck, Plus, Edit3, Trash2 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
 import { fetchUserTeamsSummary, fetchCurrentTeamContext, fetchTeamMembers, updateTeamName, updateOwnTeamRole, removeTeamMember, updateTeamMemberRole } from "@/lib/teams";
+import { useAuthz } from "@/components/AuthzProvider";
+import { toTitleCaseRole, type TeamRole } from "@/lib/authz";
 import { useEffect } from "react";
 import { InviteMemberDialog } from "@/components/InviteMemberDialog";
 
@@ -56,11 +58,8 @@ export function TeamSettingsDialog({
   const [currentTeamName, setCurrentTeamName] = useState("No Team Selected");
   const [currentTeamRole, setCurrentTeamRole] = useState<"admin"|"accountant"|"viewer">("viewer");
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-
-  const isAdmin = currentTeamRole === 'admin';
-
-  const toTitleCase = (role: string) => role.charAt(0).toUpperCase() + role.slice(1);
   const supabase = createClient();
+  const { can, isAdmin } = useAuthz();
 
   // Load current team and members; listen for team switching events
   useEffect(() => {
@@ -79,10 +78,10 @@ export function TeamSettingsDialog({
       setCurrentTeamName(ctx.teamName || 'Team');
       const roleLower = (ctx.currentUserRole || 'viewer') as 'admin'|'accountant'|'viewer';
       setCurrentTeamRole(roleLower);
-      setUserRole(toTitleCase(roleLower));
+      setUserRole(toTitleCaseRole(roleLower));
 
       const members = await fetchTeamMembers(supabase, ctx.teamId);
-      setTeamMembers(members.map(m => ({ ...m, role: toTitleCase(m.role) })));
+      setTeamMembers(members.map(m => ({ ...m, role: toTitleCaseRole(m.role as TeamRole) })));
 
       // Reset form defaults
       setTeamName(ctx.teamName || "Team");
@@ -103,7 +102,7 @@ export function TeamSettingsDialog({
 
   // Initialize form fields with current team data
   const [teamName, setTeamName] = useState(currentTeamName);
-  const [userRole, setUserRole] = useState<string>(toTitleCase(currentTeamRole));
+  const [userRole, setUserRole] = useState<string>(toTitleCaseRole(currentTeamRole as TeamRole));
 
   const handleSave = async () => {
     if (!currentTeamId) return;
@@ -137,7 +136,7 @@ export function TeamSettingsDialog({
       }
       if (isAdmin && desiredRoleLower !== currentTeamRole) {
         setCurrentTeamRole(desiredRoleLower);
-        setUserRole(toTitleCase(desiredRoleLower));
+        setUserRole(toTitleCaseRole(desiredRoleLower));
       }
 
       toast.success('Team settings updated successfully');
@@ -154,7 +153,7 @@ export function TeamSettingsDialog({
 
   const handleCancel = () => {
     setTeamName(currentTeamName);
-    setUserRole(toTitleCase(currentTeamRole));
+    setUserRole(toTitleCaseRole(currentTeamRole as TeamRole));
     setIsEditing(false);
   };
 
@@ -190,7 +189,7 @@ export function TeamSettingsDialog({
                     id="teamName"
                     value={teamName}
                     onChange={(e) => setTeamName(e.target.value)}
-                    disabled={!isEditing || !isAdmin}
+                     disabled={!isEditing || !can('team:update')}
                     placeholder={
                       currentTeamName === "No Team Selected"
                         ? "Enter team name"
@@ -198,7 +197,7 @@ export function TeamSettingsDialog({
                     }
                     className="flex-1"
                   />
-                  {!isEditing && isAdmin && (
+                  {!isEditing && can('team:update') && (
                     <Button
                       variant="outline"
                       size="icon"
@@ -221,14 +220,14 @@ export function TeamSettingsDialog({
                     id="userRole"
                     value={userRole}
                     onChange={(e) => setUserRole(e.target.value)}
-                    disabled={!isEditing || !isAdmin}
+                     disabled={!isEditing || !can('member:update')}
                     className="flex h-10 w-full mt-0 rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <option>Admin</option>
                     <option>Accountant</option>
                     <option>Viewer</option>
                   </select>
-                  {!isEditing && isAdmin && (
+                  {!isEditing && can('team:update') && (
                     <Button
                       variant="outline"
                       size="icon"
@@ -256,7 +255,7 @@ export function TeamSettingsDialog({
                     </p>
                   )}
                 </div>
-                {isAdmin && (
+                {can('member:invite') && (
                   <Button
                     size="sm"
                     className="gap-2"
@@ -289,7 +288,7 @@ export function TeamSettingsDialog({
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {isAdmin && isEditing ? (
+                      {can('member:update') && isEditing ? (
                         <select
                           className="px-2 py-1 text-xs rounded-md border border-border bg-background"
                           value={member.role}
@@ -326,7 +325,7 @@ export function TeamSettingsDialog({
                           {member.role}
                         </span>
                       )}
-                      {isAdmin && isEditing && (
+                      {can('member:remove') && isEditing && (
                         <Button variant="ghost" size="sm" onClick={async () => {
                           if (!currentTeamId) return;
                           const { error } = await removeTeamMember(supabase, currentTeamId, member.id);
@@ -348,7 +347,7 @@ export function TeamSettingsDialog({
             </div>
 
             {/* Action Buttons */}
-            {isAdmin && isEditing && (
+            {can('team:update') && isEditing && (
               <div className="flex gap-2 pt-4">
                 <Button
                   variant="outline"
