@@ -15,7 +15,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Mail, Edit3, Building2, UserCheck, Users, Check, Plus } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
-import { getUserTeams, switchCurrentTeam } from "@/lib/mock-data";
+import type { UserTeamSummary } from "@/lib/teams";
+import { fetchUserTeamsSummary } from "@/lib/teams";
 import { useEffect } from "react";
 import { CreateTeamDialog } from "@/components/CreateTeamDialog";
 
@@ -38,19 +39,26 @@ export function ProfileDialog({ open, onOpenChange, user, onUserUpdate }: Profil
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user.user_metadata?.full_name || "");
   const [isLoading, setIsLoading] = useState(false);
-  const [userTeams, setUserTeams] = useState(getUserTeams());
+  const [userTeams, setUserTeams] = useState<UserTeamSummary[]>([]);
   const [createTeamOpen, setCreateTeamOpen] = useState(false);
   const supabase = createClient();
 
-  // Listen for team switching events
+  // Load teams and listen for team events
   useEffect(() => {
-    const handleTeamSwitch = () => {
-      setUserTeams(getUserTeams());
+    const load = async () => {
+      try {
+        const data = await fetchUserTeamsSummary(supabase);
+        setUserTeams(data);
+      } catch {
+        setUserTeams([]);
+      }
     };
+    if (open) {
+      load();
+    }
 
-    const handleTeamCreated = () => {
-      setUserTeams(getUserTeams());
-    };
+    const handleTeamSwitch = () => { load(); };
+    const handleTeamCreated = () => { load(); };
 
     window.addEventListener('teamSwitched', handleTeamSwitch);
     window.addEventListener('teamCreated', handleTeamCreated);
@@ -58,15 +66,34 @@ export function ProfileDialog({ open, onOpenChange, user, onUserUpdate }: Profil
       window.removeEventListener('teamSwitched', handleTeamSwitch);
       window.removeEventListener('teamCreated', handleTeamCreated);
     };
-  }, []);
+  }, [supabase, open]);
 
-  const handleTeamSwitch = (teamId: string) => {
-    switchCurrentTeam(teamId);
-    toast.success("Team switched successfully");
-    // Update local state immediately
-    setUserTeams(getUserTeams());
-    // Notify parent component
-    onUserUpdate?.();
+  const handleTeamSwitch = async (teamId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ current_team_id: teamId })
+        .eq('id', user.id);
+
+      if (error) {
+        toast.error('Failed to switch team', { description: error.message });
+        return;
+      }
+
+      toast.success('Team switched successfully');
+      const data = await fetchUserTeamsSummary(supabase);
+      setUserTeams(data);
+      // Notify other components to refresh
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('teamSwitched', { detail: { teamId } }));
+      }
+      onUserUpdate?.();
+    } catch (e: any) {
+      toast.error('Failed to switch team', { description: e?.message || 'Unexpected error' });
+    }
   };
 
   const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
