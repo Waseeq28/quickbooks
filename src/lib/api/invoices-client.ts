@@ -42,4 +42,24 @@ export async function createInvoice(payload: CreateInvoicePayload): Promise<Crea
   return data as CreateInvoiceResponse
 }
 
+export interface DeleteInvoiceResponse {
+  success: boolean
+  deletedInvoiceId?: string
+  error?: string
+  details?: string
+}
+
+export async function deleteInvoice(docNumber: string): Promise<DeleteInvoiceResponse> {
+  const response = await fetch(`/api/quickbooks/invoices/${docNumber}`, { method: 'DELETE' })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    return {
+      success: false,
+      error: data?.error || 'Failed to delete invoice',
+      details: data?.details,
+    }
+  }
+  return data as DeleteInvoiceResponse
+}
+
 
