@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
-import { getQuickBooksService } from '@/lib/quickbooks'
-import { transformQBInvoicesToSimple } from '@/lib/quickbooks-transform'
+import { getQuickBooksService } from '@/lib/quickbooks/service'
+import { toSimpleInvoices } from '@/lib/quickbooks/invoices'
 
 export async function GET() {
   try {
     const qbService = await getQuickBooksService()
-    const rawInvoices = await qbService.getInvoices()
-    const simplifiedInvoices = transformQBInvoicesToSimple(rawInvoices)
+    const rawInvoices = await qbService.listInvoices()
+    const simplifiedInvoices = toSimpleInvoices(rawInvoices)
 
     return NextResponse.json(simplifiedInvoices)
   } catch (error: any) {

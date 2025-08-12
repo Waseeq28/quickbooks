@@ -71,6 +71,8 @@ export interface SimpleInvoice {
   issueDate: string
   items: Array<{
     description: string
+    productName?: string
+    productDescription?: string
     quantity: number
     rate: number
     amount: number

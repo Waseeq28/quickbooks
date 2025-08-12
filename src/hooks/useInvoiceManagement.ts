@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { SimpleInvoice } from "@/types/quickbooks"
-import { transformQBInvoiceToSimple } from "@/lib/quickbooks-transform"
+import { toSimpleInvoice } from "@/lib/quickbooks/invoices"
 
 export function useInvoiceManagement() {
   const [invoices, setInvoices] = useState<SimpleInvoice[]>([])
@@ -59,7 +59,7 @@ export function useInvoiceManagement() {
       const result = toolInvocation.result as any
       
       if (result.success && result.invoice) {
-        const simplifiedInvoice = transformQBInvoiceToSimple(result.invoice)
+        const simplifiedInvoice = toSimpleInvoice(result.invoice)
         const existingInvoice = invoices.find(inv => inv.id === simplifiedInvoice.id)
         
         if (existingInvoice) {
@@ -75,7 +75,7 @@ export function useInvoiceManagement() {
       const result = toolInvocation.result as any
       
       if (result.success && result.invoice) {
-        const simplifiedInvoice = transformQBInvoiceToSimple(result.invoice)
+        const simplifiedInvoice = toSimpleInvoice(result.invoice)
         setInvoices(prev => [simplifiedInvoice, ...prev])
         setSelectedInvoice(simplifiedInvoice)
       }
@@ -85,7 +85,7 @@ export function useInvoiceManagement() {
       const result = toolInvocation.result as any
       
       if (result.success && result.invoice) {
-        const updatedSimplifiedInvoice = transformQBInvoiceToSimple(result.invoice)
+        const updatedSimplifiedInvoice = toSimpleInvoice(result.invoice)
         
         setInvoices(prev => prev.map(invoice => 
           invoice.id === updatedSimplifiedInvoice.id ? updatedSimplifiedInvoice : invoice

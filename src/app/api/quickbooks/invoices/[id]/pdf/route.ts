@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { qbService } from '@/lib/quickbooks'
+import { getQuickBooksService } from '@/lib/quickbooks/service'
 
 export async function GET(
   request: NextRequest,
@@ -13,7 +13,8 @@ export async function GET(
     }
 
     // Get the PDF from QuickBooks
-    const pdfBuffer = await qbService.getInvoicePdf(invoiceId)
+    const service = await getQuickBooksService()
+    const pdfBuffer = await service.getInvoicePdf(invoiceId)
 
     // Return the PDF as a response
     return new NextResponse(pdfBuffer, {

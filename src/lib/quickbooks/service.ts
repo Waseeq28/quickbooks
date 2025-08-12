@@ -1,0 +1,109 @@
+import QuickBooks from 'node-quickbooks'
+import { DatabaseService } from '@/lib/database'
+import { normalizeQbError } from './errors'
+import type { QBInvoice } from '@/types/quickbooks'
+
+export class QuickBooksService {
+  private qbo: any
+
+  private constructor(accessToken: string, refreshToken: string, realmId: string, isSandbox: boolean) {
+    this.qbo = new QuickBooks(
+      process.env.QB_CLIENT_ID!,
+      process.env.QB_CLIENT_SECRET!,
+      accessToken,
+      false,
+      realmId,
+      isSandbox,
+      false,
+      null,
+      '2.0',
+      refreshToken
+    )
+  }
+
+  static async fromDatabase(): Promise<QuickBooksService> {
+    const connection = await DatabaseService.getQuickBooksConnection()
+    if (!connection) throw new Error('No QuickBooks connection found')
+    const isSandbox = process.env.QB_ENVIRONMENT === 'sandbox'
+    return new QuickBooksService(connection.access_token, connection.refresh_token, connection.realm_id, isSandbox)
+  }
+
+  private refreshAccessToken(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.qbo.refreshAccessToken(async (err: any) => {
+        if (err) return reject(normalizeQbError(err))
+        try {
+          const accessToken = this.qbo.token
+          const refreshToken = this.qbo.refreshToken
+          await DatabaseService.updateQuickBooksTokens(accessToken, refreshToken, undefined)
+          resolve()
+        } catch (e: any) {
+          reject(new Error(`Failed to persist refreshed tokens: ${e?.message || e}`))
+        }
+      })
+    })
+  }
+
+  private async request<T>(opName: string, fn: (qbo: any) => Promise<T>): Promise<T> {
+    try {
+      await this.refreshAccessToken()
+      return await fn(this.qbo)
+    } catch (err: any) {
+      throw normalizeQbError(err)
+    }
+  }
+
+  // Invoices
+  listInvoices(): Promise<QBInvoice[]> {
+    return this.request<QBInvoice[]>('findInvoices', () => new Promise((resolve, reject) => {
+      this.qbo.findInvoices((err: any, data: any) => err ? reject(err) : resolve((data?.QueryResponse?.Invoice ?? []) as QBInvoice[]))
+    }))
+  }
+
+  getInvoice(id: string): Promise<QBInvoice> {
+    return this.request<QBInvoice>('getInvoice', () => new Promise((resolve, reject) => {
+      this.qbo.getInvoice(id, (err: any, data: any) => err ? reject(err) : resolve(data as QBInvoice))
+    }))
+  }
+
+  createInvoice(invoice: any): Promise<QBInvoice> {
+    return this.request<QBInvoice>('createInvoice', () => new Promise((resolve, reject) => {
+      this.qbo.createInvoice(invoice, (err: any, data: any) => err ? reject(err) : resolve(data as QBInvoice))
+    }))
+  }
+
+  updateInvoice(invoice: any): Promise<QBInvoice> {
+    return this.request<QBInvoice>('updateInvoice', () => new Promise((resolve, reject) => {
+      this.qbo.updateInvoice(invoice, (err: any, data: any) => err ? reject(err) : resolve(data as QBInvoice))
+    }))
+  }
+
+  deleteInvoice(id: string, syncToken: string): Promise<any> {
+    return this.request<any>('deleteInvoice', () => new Promise((resolve, reject) => {
+      this.qbo.deleteInvoice({ Id: id, SyncToken: syncToken }, (err: any, data: any) => err ? reject(err) : resolve(data))
+    }))
+  }
+
+  sendInvoicePdf(id: string, email: string): Promise<any> {
+    return this.request<any>('sendInvoicePdf', () => new Promise((resolve, reject) => {
+      this.qbo.sendInvoicePdf(id, email, (err: any, data: any) => err ? reject(err) : resolve(data))
+    }))
+  }
+
+  getInvoicePdf(id: string): Promise<Buffer> {
+    return this.request<Buffer>('getInvoicePdf', () => new Promise((resolve, reject) => {
+      this.qbo.getInvoicePdf(id, (err: any, data: any) => err ? reject(err) : resolve(data))
+    }))
+  }
+
+  // Customers
+  listCustomers(): Promise<any[]> {
+    return this.request<any[]>('findCustomers', () => new Promise((resolve, reject) => {
+      this.qbo.findCustomers((err: any, data: any) => err ? reject(err) : resolve((data?.QueryResponse?.Customer ?? []) as any[]))
+    }))
+  }
+}
+
+export const getQuickBooksService = async () => QuickBooksService.fromDatabase()
+
+
