@@ -88,7 +88,7 @@ export function InvoicePanel({
               className="flex-1 gap-2 font-medium bg-card/50 hover:bg-card border-border/50 hover:border-primary/50 shadow-md hover:shadow-lg transition-all duration-200 group"
             >
               <RefreshCw className={`h-4 w-4 text-primary group-hover:text-primary/80 transition-colors ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'} duration-300`} />
-              <span className="text-foreground group-hover:text-primary transition-colors">{isLoading ? 'Loading...' : 'Fetch'}</span>
+              <span className="text-foreground group-hover:text-primary transition-colors">{isLoading ? 'Loading...' : 'Refresh'}</span>
             </Button>
           </div>
         </div>
