@@ -84,18 +84,18 @@ export function InvoiceDetails({ invoice, onDownloadPdf }: InvoiceDetailsProps) 
                     key={index}
                     className="grid grid-cols-1 md:grid-cols-4 gap-2 p-3 bg-muted/30 rounded-lg border border-border/30 hover:bg-muted/40 transition-all"
                   >
-                    <div>
+                    <div className="flex items-center">
                       <p className="font-semibold text-sm text-foreground">{productName}</p>
                     </div>
-                    <div>
+                    <div className="flex items-center">
                       <p className="text-xs text-muted-foreground break-words">{productDescription}</p>
                     </div>
-                    <div className="md:text-right">
+                    <div className="md:text-right flex items-center justify-end">
                       <p className="text-xs text-muted-foreground">
                         {item.quantity} × ${item.rate.toFixed(2)}
                       </p>
                     </div>
-                    <div className="md:text-right">
+                    <div className="md:text-right flex items-center justify-end">
                       <p className="font-bold text-base text-primary">${item.amount.toFixed(2)}</p>
                     </div>
                   </div>

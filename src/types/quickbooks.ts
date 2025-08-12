@@ -1,5 +1,5 @@
 export interface QBInvoice {
-  Id: string
+  DocNumber: string
   SyncToken: string
   CustomerRef: {
     value: string
