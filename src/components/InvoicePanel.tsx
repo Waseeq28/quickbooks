@@ -2,11 +2,13 @@
 
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { RefreshCw, Receipt } from "lucide-react"
+import { RefreshCw, Receipt, Plus } from "lucide-react"
 import { SimpleInvoice } from "@/types/quickbooks"
 import { InvoiceList } from "./InvoiceList"
 import { InvoiceDetails } from "./InvoiceDetails"
 import { EmptyState } from "./EmptyState"
+import { CreateInvoiceDialog } from "./CreateInvoiceDialog"
+import { useState } from "react"
 
 interface InvoicePanelProps {
   invoices: SimpleInvoice[]
@@ -25,6 +27,7 @@ export function InvoicePanel({
   onFetchInvoices,
   error 
 }: InvoicePanelProps) {
+  const [createInvoiceOpen, setCreateInvoiceOpen] = useState(false)
 
   const handleDownloadPdf = async (invoiceId: string) => {
     try {
@@ -67,16 +70,27 @@ export function InvoicePanel({
               <p className="text-xs text-muted-foreground font-medium">Track and manage billing</p>
             </div>
           </div>
-          <Button 
-            onClick={onFetchInvoices} 
-            disabled={isLoading} 
-            size="sm" 
-            variant="outline" 
-            className="gap-2 font-medium bg-card/50 hover:bg-card border-border/50 hover:border-primary/50 shadow-md hover:shadow-lg transition-all duration-200 group"
-          >
-            <RefreshCw className={`h-4 w-4 text-primary group-hover:text-primary/80 transition-colors ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'} duration-300`} />
-            <span className="text-foreground group-hover:text-primary transition-colors">{isLoading ? 'Loading...' : 'Fetch'}</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={() => setCreateInvoiceOpen(true)}
+              size="sm" 
+              variant="outline"
+              className="flex-1 gap-2 font-medium bg-card/50 hover:bg-card border-border/50 hover:border-primary/50 shadow-md hover:shadow-lg transition-all duration-200 group"
+            >
+              <Plus className="h-4 w-4 text-primary group-hover:text-primary/80 transition-colors" />
+              <span className="text-foreground group-hover:text-primary transition-colors">Create</span>
+            </Button>
+            <Button 
+              onClick={onFetchInvoices} 
+              disabled={isLoading} 
+              size="sm" 
+              variant="outline" 
+              className="flex-1 gap-2 font-medium bg-card/50 hover:bg-card border-border/50 hover:border-primary/50 shadow-md hover:shadow-lg transition-all duration-200 group"
+            >
+              <RefreshCw className={`h-4 w-4 text-primary group-hover:text-primary/80 transition-colors ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'} duration-300`} />
+              <span className="text-foreground group-hover:text-primary transition-colors">{isLoading ? 'Loading...' : 'Refresh'}</span>
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -105,6 +119,15 @@ export function InvoicePanel({
           </ScrollArea>
         </div>
       </div>
+
+      {/* Create Invoice Dialog */}
+      <CreateInvoiceDialog
+        open={createInvoiceOpen}
+        onOpenChange={setCreateInvoiceOpen}
+        onInvoiceCreated={async () => {
+          await onFetchInvoices()
+        }}
+      />
     </div>
   )
 }

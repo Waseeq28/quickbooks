@@ -102,6 +102,32 @@ export class QuickBooksService {
       this.qbo.findCustomers((err: any, data: any) => err ? reject(err) : resolve((data?.QueryResponse?.Customer ?? []) as any[]))
     }))
   }
+
+  createCustomer(customer: any): Promise<any> {
+    return this.request<any>('createCustomer', () => new Promise((resolve, reject) => {
+      this.qbo.createCustomer(customer, (err: any, data: any) => err ? reject(err) : resolve(data))
+    }))
+  }
+
+  // Items (Products/Services)
+  listItems(): Promise<any[]> {
+    return this.request<any[]>('findItems', () => new Promise((resolve, reject) => {
+      this.qbo.findItems((err: any, data: any) => err ? reject(err) : resolve((data?.QueryResponse?.Item ?? []) as any[]))
+    }))
+  }
+
+  createItem(item: any): Promise<any> {
+    return this.request<any>('createItem', () => new Promise((resolve, reject) => {
+      this.qbo.createItem(item, (err: any, data: any) => err ? reject(err) : resolve(data))
+    }))
+  }
+
+  // Accounts
+  listAccounts(): Promise<any[]> {
+    return this.request<any[]>('findAccounts', () => new Promise((resolve, reject) => {
+      this.qbo.findAccounts((err: any, data: any) => err ? reject(err) : resolve((data?.QueryResponse?.Account ?? []) as any[]))
+    }))
+  }
 }
 
 export const getQuickBooksService = async () => QuickBooksService.fromDatabase()

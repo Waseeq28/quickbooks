@@ -22,7 +22,7 @@ export function toSimpleInvoice(qbInvoice: QBInvoice): SimpleInvoice {
     })) as any
 
   return {
-    id: qbInvoice.Id,
+    id: qbInvoice.DocNumber,
     customerName: qbInvoice.CustomerRef.name || `Customer ${qbInvoice.CustomerRef.value}`,
     amount: qbInvoice.TotalAmt,
     balance: qbInvoice.Balance,
