@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Mail, Download, RefreshCw, Check, AlertTriangle } from "lucide-react"
+import { Mail, Download, RefreshCw, Check, AlertTriangle, Trash2 } from "lucide-react"
+import { deleteInvoice } from "@/lib/api/invoices-client"
 
 interface InvoiceActionsProps {
   invoiceId: string
@@ -15,6 +16,8 @@ export function InvoiceActions({ invoiceId, onDownloadPdf }: InvoiceActionsProps
   const [isSendingEmail, setIsSendingEmail] = useState(false)
   const [sendEmailError, setSendEmailError] = useState<string | null>(null)
   const [sendEmailSuccess, setSendEmailSuccess] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const handleSendEmail = async () => {
     if (!emailToSend) {
@@ -53,6 +56,28 @@ export function InvoiceActions({ invoiceId, onDownloadPdf }: InvoiceActionsProps
     }
   }
 
+  const handleDelete = async () => {
+    if (isDeleting) return
+    setIsDeleting(true)
+    setDeleteError(null)
+    try {
+      const result = await deleteInvoice(invoiceId)
+      if (!result.success) {
+        throw new Error(result?.details || result?.error || 'Failed to delete invoice')
+      }
+      // Soft UX: reload the page or emit a custom event so parent can refresh list
+      // For now, trigger a simple reload to reflect deletion
+      if (typeof window !== 'undefined') {
+        window.location.reload()
+      }
+    } catch (err: any) {
+      setDeleteError(err?.message || 'Failed to delete invoice')
+    } finally {
+      setIsDeleting(false)
+      setTimeout(() => setDeleteError(null), 5000)
+    }
+  }
+
   return (
     <div className="pt-2.5 space-y-2.5">
       <div className="flex items-end gap-2">
@@ -74,8 +99,8 @@ export function InvoiceActions({ invoiceId, onDownloadPdf }: InvoiceActionsProps
         <Button
           onClick={handleSendEmail}
           disabled={isSendingEmail || !emailToSend || !!sendEmailSuccess}
-          className="gap-1.5 min-w-[90px] h-9"
-          variant={sendEmailSuccess ? "secondary" : "default"}
+          className="gap-1.5 h-9 bg-accent"
+          variant="outline"
           size="sm"
         >
           {isSendingEmail ? (
@@ -93,11 +118,26 @@ export function InvoiceActions({ invoiceId, onDownloadPdf }: InvoiceActionsProps
         <Button 
           onClick={() => onDownloadPdf(invoiceId)}
           variant="outline"
-          className="gap-1.5 h-9"
+          className="gap-1.5 h-9 bg-accent"
           size="sm"
         >
           <Download className="h-3.5 w-3.5" />
           <span className="text-sm">PDF</span>
+        </Button>
+
+        <Button
+          onClick={handleDelete}
+          variant="destructive"
+          className="gap-1.5 h-9 bg-accent"
+          size="sm"
+          disabled={isDeleting}
+        >
+          {isDeleting ? (
+            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Trash2 className="h-3.5 w-3.5" />
+          )}
+          <span className="text-sm">{isDeleting ? 'Deleting' : 'Delete'}</span>
         </Button>
       </div>
       
@@ -112,6 +152,12 @@ export function InvoiceActions({ invoiceId, onDownloadPdf }: InvoiceActionsProps
           <p className="text-xs text-green-400 flex items-center gap-1 pl-1">
             <Check className="h-3 w-3" />
             {sendEmailSuccess}
+          </p>
+        )}
+        {deleteError && (
+          <p className="text-xs text-red-400 flex items-center gap-1 pl-1">
+            <AlertTriangle className="h-3 w-3" />
+            {deleteError}
           </p>
         )}
       </div>
