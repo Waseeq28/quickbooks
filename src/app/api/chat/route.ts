@@ -1,8 +1,8 @@
 import { openai } from '@ai-sdk/openai';
 import { streamText, tool } from 'ai';
 import { z } from 'zod';
-import { qbService } from '@/lib/quickbooks';
-import { transformQBInvoicesToSimple } from '@/lib/quickbooks-transform';
+import { getQuickBooksService } from '@/lib/quickbooks/service';
+import { toSimpleInvoices, toSimpleInvoice } from '@/lib/quickbooks/invoices';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -14,8 +14,9 @@ const invoiceTools = {
     parameters: z.object({}), // No parameters needed for fetching all invoices
     execute: async () => {
       try {
-        const rawInvoices = await qbService.getInvoices();
-        const simplifiedInvoices = transformQBInvoicesToSimple(rawInvoices);
+        const service = await getQuickBooksService();
+        const rawInvoices = await service.listInvoices();
+        const simplifiedInvoices = toSimpleInvoices(rawInvoices);
         
         return {
           success: true,
@@ -40,7 +41,8 @@ const invoiceTools = {
     }),
     execute: async ({ invoiceId }) => {
       try {
-        const rawInvoice = await qbService.getInvoice(invoiceId);
+        const service = await getQuickBooksService();
+        const rawInvoice = await service.getInvoice(invoiceId);
         
         if (!rawInvoice) {
           return {
@@ -70,12 +72,13 @@ const invoiceTools = {
     parameters: z.object({}),
     execute: async () => {
       try {
-        const customers = await qbService.getCustomers();
+        const service = await getQuickBooksService();
+        const customers = await service.listCustomers();
         
         return {
           success: true,
           message: `Retrieved ${customers.length} customers.`,
-          customers: customers.map(customer => ({
+          customers: (customers as any[]).map((customer: any) => ({
             id: customer.Id,
             name: customer.Name,
             companyName: customer.CompanyName,
@@ -133,20 +136,14 @@ const invoiceTools = {
           }))
         };
 
-        const createdInvoice = await qbService.createInvoice(invoiceData);
-        
-        // Add a flag to track if we explicitly set due date
-        if (createdInvoice) {
-          createdInvoice._customCreationFlags = {
-            explicitDueDate: !!dueDate
-          };
-        }
+        const service = await getQuickBooksService();
+        const createdInvoice = await service.createInvoice(invoiceData);
         
         return {
           success: true,
           message: `Invoice created successfully for ${customerName}. Total amount: $${totalAmount.toFixed(2)}${dueDate ? `, due ${dueDate}` : ', no due date set'}.`,
           invoice: createdInvoice,
-          invoiceId: createdInvoice?.Id,
+          invoiceId: (createdInvoice as any)?.Id,
           totalAmount: totalAmount
         };
       } catch (error: any) {
@@ -178,7 +175,8 @@ const invoiceTools = {
     execute: async ({ invoiceId, syncToken, updates }) => {
       try {
         // First get the current invoice to preserve existing data
-        const currentInvoice = await qbService.getInvoice(invoiceId);
+        const service = await getQuickBooksService();
+        const currentInvoice: any = await service.getInvoice(invoiceId);
         
         if (!currentInvoice) {
           return {
@@ -189,7 +187,7 @@ const invoiceTools = {
         }
 
         // Build the updated invoice object
-        const updatedInvoice = {
+        const updatedInvoice: any = {
           ...currentInvoice,
           Id: invoiceId,
           SyncToken: syncToken
@@ -218,7 +216,7 @@ const invoiceTools = {
           }));
         }
 
-        const result = await qbService.updateInvoice(updatedInvoice);
+        const result = await service.updateInvoice(updatedInvoice);
         
         return {
           success: true,
@@ -245,7 +243,8 @@ const invoiceTools = {
     }),
     execute: async ({ invoiceId, syncToken, invoiceReference }) => {
       try {
-        const result = await qbService.deleteInvoice(invoiceId, syncToken);
+        const service = await getQuickBooksService();
+        const result = await service.deleteInvoice(invoiceId, syncToken);
         
         return {
           success: true,
@@ -270,7 +269,8 @@ const invoiceTools = {
     }),
     execute: async ({ invoiceId, email }) => {
       try {
-        await qbService.sendInvoiceEmail(invoiceId, email);
+        const service = await getQuickBooksService();
+        await service.sendInvoicePdf(invoiceId, email);
         return {
           success: true,
           message: `Invoice ${invoiceId} has been sent to ${email}.`,
@@ -296,7 +296,8 @@ const invoiceTools = {
     execute: async ({ invoiceId, invoiceReference }) => {
       try {
         // Verify the invoice exists first
-        const invoice = await qbService.getInvoice(invoiceId);
+        const service = await getQuickBooksService();
+        const invoice = await service.getInvoice(invoiceId);
         
         if (!invoice) {
           return {

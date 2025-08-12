@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
-import { qbService } from '@/lib/quickbooks'
+import { getQuickBooksService } from '@/lib/quickbooks/service'
 
 export async function GET() {
   try {
     // A successful call to getInvoices serves as a connection test.
-    const invoices = await qbService.getInvoices()
+    const service = await getQuickBooksService()
+    const invoices = await service.listInvoices()
     
     return NextResponse.json({
       success: true,

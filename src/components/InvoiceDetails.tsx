@@ -68,31 +68,39 @@ export function InvoiceDetails({ invoice, onDownloadPdf }: InvoiceDetailsProps) 
             />
           </div>
 
-          <Separator className="bg-border/30" />
-
           {/* Invoice Items */}
           <div className="space-y-2">
             <h3 className="font-bold text-base text-foreground flex items-center gap-1.5">
               <Receipt className="h-4 w-4 text-primary" />
-              Line Items
+              Items
             </h3>
+
             <div className="space-y-1.5">
-              {invoice.items.map((item, index) => (
-                <div 
-                  key={index} 
-                  className="flex justify-between items-center p-3 bg-muted/30 rounded-lg border border-border/30 hover:bg-muted/40 transition-all"
-                >
-                  <div className="flex-1">
-                    <p className="font-semibold text-foreground text-sm">{item.description}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {item.quantity} × ${item.rate.toFixed(2)}
-                    </p>
+              {invoice.items.map((item, index) => {
+                const productName = item.productName || item.description || 'Item'
+                const productDescription = item.productDescription || ''
+                return (
+                  <div
+                    key={index}
+                    className="grid grid-cols-1 md:grid-cols-4 gap-2 p-3 bg-muted/30 rounded-lg border border-border/30 hover:bg-muted/40 transition-all"
+                  >
+                    <div>
+                      <p className="font-semibold text-sm text-foreground">{productName}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground break-words">{productDescription}</p>
+                    </div>
+                    <div className="md:text-right">
+                      <p className="text-xs text-muted-foreground">
+                        {item.quantity} × ${item.rate.toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="md:text-right">
+                      <p className="font-bold text-base text-primary">${item.amount.toFixed(2)}</p>
+                    </div>
                   </div>
-                  <p className="font-bold text-base text-primary">
-                    ${item.amount.toFixed(2)}
-                  </p>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 

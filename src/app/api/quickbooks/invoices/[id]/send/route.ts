@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { qbService } from '@/lib/quickbooks';
+import { getQuickBooksService } from '@/lib/quickbooks/service';
 
 export async function POST(
   request: NextRequest,
@@ -13,7 +13,8 @@ export async function POST(
   }
 
   try {
-    await qbService.sendInvoiceEmail(invoiceId, email);
+    const service = await getQuickBooksService();
+    await service.sendInvoicePdf(invoiceId, email);
     return NextResponse.json({ success: true, message: `Invoice ${invoiceId} sent to ${email}` });
   } catch (error: any) {
     console.error(`Failed to send invoice ${invoiceId}:`, error);
