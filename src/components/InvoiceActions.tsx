@@ -54,7 +54,7 @@ export function InvoiceActions({ invoiceId, onDownloadPdf }: InvoiceActionsProps
   }
 
   return (
-    <div className="pt-2.5 space-y-2.5 border-t border-border/30">
+    <div className="pt-2.5 space-y-2.5">
       <div className="flex items-end gap-2">
         <div className="flex-grow">
           <label htmlFor="emailForInvoice" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
