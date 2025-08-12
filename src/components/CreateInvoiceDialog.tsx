@@ -2,15 +2,15 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Plus, X, CalendarIcon } from "lucide-react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { toast } from "sonner";
@@ -33,7 +33,11 @@ interface CreateInvoiceDialogProps {
   onInvoiceCreated?: () => void;
 }
 
-export function CreateInvoiceDialog({ open, onOpenChange, onInvoiceCreated }: CreateInvoiceDialogProps) {
+export function CreateInvoiceDialog({
+  open,
+  onOpenChange,
+  onInvoiceCreated,
+}: CreateInvoiceDialogProps) {
   const [customerName, setCustomerName] = useState("");
   const [issueDate, setIssueDate] = useState<Date | undefined>(new Date());
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
@@ -45,21 +49,24 @@ export function CreateInvoiceDialog({ open, onOpenChange, onInvoiceCreated }: Cr
       quantity: 1,
       rate: 0,
       amount: 0,
-    }
+    },
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [issueDateOpen, setIssueDateOpen] = useState(false);
   const [dueDateOpen, setDueDateOpen] = useState(false);
 
   const addItem = () => {
-    setItems([...items, {
-      description: "",
-      productName: "",
-      productDescription: "",
-      quantity: 1,
-      rate: 0,
-      amount: 0,
-    }]);
+    setItems([
+      ...items,
+      {
+        description: "",
+        productName: "",
+        productDescription: "",
+        quantity: 1,
+        rate: 0,
+        amount: 0,
+      },
+    ]);
   };
 
   const removeItem = (index: number) => {
@@ -68,17 +75,22 @@ export function CreateInvoiceDialog({ open, onOpenChange, onInvoiceCreated }: Cr
     }
   };
 
-  const updateItem = (index: number, field: keyof InvoiceItem, value: string | number) => {
+  const updateItem = (
+    index: number,
+    field: keyof InvoiceItem,
+    value: string | number
+  ) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
-    
+
     // Recalculate amount
-    if (field === 'quantity' || field === 'rate') {
-      const quantity = field === 'quantity' ? Number(value) : newItems[index].quantity;
-      const rate = field === 'rate' ? Number(value) : newItems[index].rate;
+    if (field === "quantity" || field === "rate") {
+      const quantity =
+        field === "quantity" ? Number(value) : newItems[index].quantity;
+      const rate = field === "rate" ? Number(value) : newItems[index].rate;
       newItems[index].amount = quantity * rate;
     }
-    
+
     setItems(newItems);
   };
 
@@ -92,54 +104,60 @@ export function CreateInvoiceDialog({ open, onOpenChange, onInvoiceCreated }: Cr
       return;
     }
 
-    if (items.some(item => !item.description.trim() || item.rate <= 0)) {
-      toast.error("Please fill in all item details and ensure rates are greater than 0");
+    if (items.some((item) => !item.description.trim() || item.rate <= 0)) {
+      toast.error(
+        "Please fill in all item details and ensure rates are greater than 0"
+      );
       return;
     }
 
     setIsLoading(true);
-    
+
     try {
       const data = await createInvoice({
         customerName: customerName.trim(),
-        issueDate: issueDate ? format(issueDate, 'yyyy-MM-dd') : undefined,
-        dueDate: dueDate ? format(dueDate, 'yyyy-MM-dd') : undefined,
-        items: items.map(i => ({
+        issueDate: issueDate ? format(issueDate, "yyyy-MM-dd") : undefined,
+        dueDate: dueDate ? format(dueDate, "yyyy-MM-dd") : undefined,
+        items: items.map((i) => ({
           description: i.description,
           productName: i.productName,
           productDescription: i.productDescription,
           quantity: i.quantity,
           rate: i.rate,
         })),
-      })
+      });
 
       if (!data.success) {
-        throw new Error(data?.details || data?.error || 'Failed to create invoice')
+        throw new Error(
+          data?.details || data?.error || "Failed to create invoice"
+        );
       }
 
-      toast.success('Invoice created successfully!')
+      toast.success("Invoice created successfully!");
 
       // Reset form
       setCustomerName("");
       setIssueDate(new Date());
       setDueDate(undefined);
-      setItems([{ 
-        description: "", 
-        productName: "", 
-        productDescription: "", 
-        quantity: 1, 
-        rate: 0, 
-        amount: 0, 
-      }])
+      setItems([
+        {
+          description: "",
+          productName: "",
+          productDescription: "",
+          quantity: 1,
+          rate: 0,
+          amount: 0,
+        },
+      ]);
 
-      onOpenChange(false)
-      onInvoiceCreated?.()
+      onOpenChange(false);
+      onInvoiceCreated?.();
     } catch (error: any) {
       toast.error("Failed to create invoice", {
         description: error?.message ?? "An unexpected error occurred",
       });
     }
-    
+
     setIsLoading(false);
   };
 
@@ -147,14 +165,16 @@ export function CreateInvoiceDialog({ open, onOpenChange, onInvoiceCreated }: Cr
     setCustomerName("");
     setIssueDate(new Date());
     setDueDate(undefined);
-    setItems([{
-      description: "",
-      productName: "",
-      productDescription: "",
-      quantity: 1,
-      rate: 0,
-      amount: 0,
-    }]);
+    setItems([
+      {
+        description: "",
+        productName: "",
+        productDescription: "",
+        quantity: 1,
+        rate: 0,
+        amount: 0,
+      },
+    ]);
     onOpenChange(false);
   };
 
@@ -166,7 +186,10 @@ export function CreateInvoiceDialog({ open, onOpenChange, onInvoiceCreated }: Cr
           {/* Basic Invoice Info */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-4 md:col-span-2">
-              <Label htmlFor="customerName" className="flex items-center gap-2 text-base">
+              <Label
+                htmlFor="customerName"
+                className="flex items-center gap-2 text-base"
+              >
                 Customer Name
               </Label>
               <Input
@@ -177,7 +200,7 @@ export function CreateInvoiceDialog({ open, onOpenChange, onInvoiceCreated }: Cr
                 className="flex-1"
               />
             </div>
-            
+
             <div className="space-y-4">
               <Label className="flex items-center gap-2 text-base">
                 Issue Date
@@ -192,10 +215,17 @@ export function CreateInvoiceDialog({ open, onOpenChange, onInvoiceCreated }: Cr
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {issueDate ? format(issueDate, "M/d/yyyy") : <span>Pick a date</span>}
+                    {issueDate ? (
+                      format(issueDate, "M/d/yyyy")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 border-2 border-gray-800" align="start">
+                <PopoverContent
+                  className="w-auto p-0 border-2 border-gray-800"
+                  align="start"
+                >
                   <Calendar
                     mode="single"
                     selected={issueDate}
@@ -208,7 +238,7 @@ export function CreateInvoiceDialog({ open, onOpenChange, onInvoiceCreated }: Cr
                 </PopoverContent>
               </Popover>
             </div>
-            
+
             <div className="space-y-4">
               <Label className="flex items-center gap-2 text-base">
                 Due Date
@@ -223,10 +253,17 @@ export function CreateInvoiceDialog({ open, onOpenChange, onInvoiceCreated }: Cr
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dueDate ? format(dueDate, "M/d/yyyy") : <span>Pick a date</span>}
+                    {dueDate ? (
+                      format(dueDate, "M/d/yyyy")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 border-2 border-gray-800" align="start">
+                <PopoverContent
+                  className="w-auto p-0 border-2 border-gray-800"
+                  align="start"
+                >
                   <Calendar
                     mode="single"
                     selected={dueDate}
@@ -244,24 +281,32 @@ export function CreateInvoiceDialog({ open, onOpenChange, onInvoiceCreated }: Cr
           {/* Invoice Items */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label className="flex items-center gap-2 text-base font-semibold"> 
+              <Label className="flex items-center gap-2 text-base font-semibold">
                 Invoice Items
               </Label>
             </div>
 
             <div className="space-y-2">
               {items.map((item, index) => (
-                <Collapsible.Root key={index} defaultOpen className="relative border border-border/30 rounded-lg bg-muted/20">
+                <Collapsible.Root
+                  key={index}
+                  defaultOpen
+                  className="relative border border-border/30 rounded-lg bg-muted/20"
+                >
                   <Collapsible.Trigger asChild>
                     <button
                       type="button"
                       className="group flex w-full items-center justify-between p-3 hover:bg-muted/40 rounded-lg"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-muted-foreground">Item {index + 1}</span>
+                        <span className="text-sm font-medium text-muted-foreground">
+                          Item {index + 1}
+                        </span>
                       </div>
                       <div className="flex items-center">
-                        <span className="text-sm font-semibold text-primary">${item.amount.toFixed(2)}</span>
+                        <span className="text-sm font-semibold text-primary">
+                          ${item.amount.toFixed(2)}
+                        </span>
                       </div>
                       <div />
                     </button>
@@ -273,7 +318,10 @@ export function CreateInvoiceDialog({ open, onOpenChange, onInvoiceCreated }: Cr
                         variant="ghost"
                         size="sm"
                         onMouseDown={(e) => e.stopPropagation()}
-                        onClick={(e) => { e.stopPropagation(); removeItem(index) }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeItem(index);
+                        }}
                         className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
                         aria-label={`Remove item ${index + 1}`}
                       >
@@ -285,48 +333,80 @@ export function CreateInvoiceDialog({ open, onOpenChange, onInvoiceCreated }: Cr
                   <Collapsible.Content className="p-4 pt-0 collapsible-content">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="space-y-2">
-                        <Label htmlFor={`productName-${index}`} className="text-xs mb-2 block">Product Name</Label>
+                        <Label
+                          htmlFor={`productName-${index}`}
+                          className="text-xs mb-2 block"
+                        >
+                          Product Name
+                        </Label>
                         <Input
                           id={`productName-${index}`}
                           value={item.productName}
-                          onChange={(e) => updateItem(index, 'productName', e.target.value)}
+                          onChange={(e) =>
+                            updateItem(index, "productName", e.target.value)
+                          }
                           placeholder="Product name"
                           className="text-sm"
                         />
                       </div>
-                      
+
                       <div className="space-y-2">
-                        <Label htmlFor={`description-${index}`} className="text-xs mb-2 block">Description</Label>
+                        <Label
+                          htmlFor={`description-${index}`}
+                          className="text-xs mb-2 block"
+                        >
+                          Description
+                        </Label>
                         <Input
                           id={`description-${index}`}
                           value={item.description}
-                          onChange={(e) => updateItem(index, 'description', e.target.value)}
+                          onChange={(e) =>
+                            updateItem(index, "description", e.target.value)
+                          }
                           placeholder="Item description"
                           className="text-sm"
                         />
                       </div>
-                      
+
                       <div className="space-y-2">
-                        <Label htmlFor={`quantity-${index}`} className="text-xs mb-2 block">Quantity</Label>
+                        <Label
+                          htmlFor={`quantity-${index}`}
+                          className="text-xs mb-2 block"
+                        >
+                          Quantity
+                        </Label>
                         <Input
                           id={`quantity-${index}`}
                           type="number"
                           min="1"
                           value={item.quantity}
-                          onChange={(e) => updateItem(index, 'quantity', Number(e.target.value))}
+                          onChange={(e) =>
+                            updateItem(
+                              index,
+                              "quantity",
+                              Number(e.target.value)
+                            )
+                          }
                           className="text-sm"
                         />
                       </div>
-                      
+
                       <div className="space-y-2">
-                        <Label htmlFor={`rate-${index}`} className="text-xs mb-2 block">Unit Price</Label>
+                        <Label
+                          htmlFor={`rate-${index}`}
+                          className="text-xs mb-2 block"
+                        >
+                          Unit Price
+                        </Label>
                         <Input
                           id={`rate-${index}`}
                           type="number"
                           min="0"
                           step="1"
                           value={item.rate}
-                          onChange={(e) => updateItem(index, 'rate', Number(e.target.value))}
+                          onChange={(e) =>
+                            updateItem(index, "rate", Number(e.target.value))
+                          }
                           placeholder="0.00"
                           className="text-sm"
                         />
@@ -335,7 +415,7 @@ export function CreateInvoiceDialog({ open, onOpenChange, onInvoiceCreated }: Cr
                   </Collapsible.Content>
                 </Collapsible.Root>
               ))}
-              
+
               {/* Add Item Button */}
               <div className="flex justify-center">
                 <Button
@@ -353,8 +433,12 @@ export function CreateInvoiceDialog({ open, onOpenChange, onInvoiceCreated }: Cr
 
           {/* Total Amount */}
           <div className="flex items-center justify-between p-2 bg-primary/10 rounded-lg border border-primary/20">
-            <span className="text-lg font-semibold text-foreground">Total Amount:</span>
-            <span className="text-2xl font-bold text-primary">${getTotalAmount().toFixed(2)}</span>
+            <span className="text-lg font-semibold text-foreground">
+              Total Amount:
+            </span>
+            <span className="text-2xl font-bold text-primary">
+              ${getTotalAmount().toFixed(2)}
+            </span>
           </div>
 
           {/* Action Buttons */}
@@ -363,14 +447,19 @@ export function CreateInvoiceDialog({ open, onOpenChange, onInvoiceCreated }: Cr
               variant="outline"
               onClick={handleCancel}
               disabled={isLoading}
-              className="flex-1"
+              className="flex-1 bg-background cursor-pointer"
             >
               Cancel
             </Button>
             <Button
+            variant="outline"
               onClick={handleCreateInvoice}
-              disabled={isLoading || !customerName.trim() || items.some(item => !item.description.trim() || item.rate <= 0)}
-              className="flex-1"
+              disabled={
+                isLoading ||
+                !customerName.trim() ||
+                items.some((item) => !item.description.trim() || item.rate <= 0)
+              }
+              className="flex-1 cursor-pointer bg-background"
             >
               {isLoading ? "Creating..." : "Create Invoice"}
             </Button>
