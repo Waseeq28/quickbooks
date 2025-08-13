@@ -58,8 +58,7 @@ export function Header() {
                 <Zap className="h-3 w-3 text-green-400" />
               </div>
               <span className="text-xs font-medium text-muted-foreground">Live</span>
-            </div>
-            
+            </div>            
             {!loading && user && (
               <UserMenu user={user} />
             )}

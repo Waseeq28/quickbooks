@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Mail, Download, RefreshCw, Check, AlertTriangle, Trash2 } from "lucide-react"
 import { deleteInvoice } from "@/lib/api/invoices-client"
+import { PermissionGate } from "@/components/AuthzProvider"
 
 interface InvoiceActionsProps {
   invoiceId: string
@@ -122,20 +123,22 @@ export function InvoiceActions({ invoiceId, onDownloadPdf }: InvoiceActionsProps
           <span className="text-sm">PDF</span>
         </Button>
 
-        <Button
-          onClick={handleDelete}
-          variant="destructive"
-          className="gap-1.5 h-9 bg-accent"
-          size="sm"
-          disabled={isDeleting}
-        >
-          {isDeleting ? (
-            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Trash2 className="h-3.5 w-3.5" />
-          )}
-          <span className="text-sm">{isDeleting ? 'Deleting' : 'Delete'}</span>
-        </Button>
+        <PermissionGate action={'invoice:delete'}>
+          <Button
+            onClick={handleDelete}
+            variant="destructive"
+            className="gap-1.5 h-9 bg-accent"
+            size="sm"
+            disabled={isDeleting}
+          >
+            {isDeleting ? (
+              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Trash2 className="h-3.5 w-3.5" />
+            )}
+            <span className="text-sm">{isDeleting ? 'Deleting' : 'Delete'}</span>
+          </Button>
+        </PermissionGate>
       </div>
       
       <div className="h-4">

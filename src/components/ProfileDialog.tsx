@@ -258,18 +258,16 @@ export function ProfileDialog({ open, onOpenChange, user, onUserUpdate }: Profil
              </div>
 
              <div className="pt-2 border-t border-border/30">
-               <div className="flex gap-2">
-                  {can('team:update') && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1 gap-2"
-                      onClick={() => setCreateTeamOpen(true)}
-                    >
-                      <Plus className="h-4 w-4" />
-                      Create New Team
-                    </Button>
-                  )}
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1 gap-2"
+                    onClick={() => setCreateTeamOpen(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Create New Team
+                  </Button>
                  <Button variant="outline" size="sm" className="flex-1 gap-2">
                    <Plus className="h-4 w-4" />
                    Join Another Team
