@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getQuickBooksService } from '@/lib/quickbooks/service'
+import { getQuickBooksServiceForTeam } from '@/lib/quickbooks/service'
+import { requirePermission } from '@/utils/authz-server'
 
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const qbService = await getQuickBooksService()
+    const { teamId } = await requirePermission('invoice:delete')
+    const qbService = await getQuickBooksServiceForTeam(teamId)
     const docNumber = params.id
 
     // Find invoice by DocNumber to obtain QuickBooks Id and SyncToken
@@ -16,7 +18,9 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Invoice not found' }, { status: 404 })
     }
 
-    const quickbooksId = String(target.Id)
+    // QuickBooks SDK returns both DocNumber (human friendly) and internal Id.
+    // Our QBInvoice type omits Id, so we fallback to DocNumber if Id is not typed.
+    const quickbooksId = (target as any).Id ? String((target as any).Id) : String(target.DocNumber)
     const syncToken = String(target.SyncToken)
 
     await qbService.deleteInvoice(quickbooksId, syncToken)

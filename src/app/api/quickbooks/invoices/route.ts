@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getQuickBooksService } from '@/lib/quickbooks/service'
-import { toSimpleInvoice, toSimpleInvoices } from '@/lib/quickbooks/invoices'
+import { toSimpleInvoices } from '@/lib/quickbooks/invoices'
+import { requirePermission } from '@/utils/authz-server'
+import { listTeamInvoices, createTeamInvoice, CreateInvoiceSchema } from '@/actions/invoices'
 
 type CreateInvoiceItem = {
   description: string
@@ -23,19 +24,11 @@ function normalizeName(name?: string): string {
 }
 
 async function findOrCreateCustomer(qbService: any, customerName: string): Promise<{ id: string; name: string }> {
-  const customers = await qbService.listCustomers()
-  const target = normalizeName(customerName)
-
-  const existing = customers.find((c: any) => (
-    normalizeName(c.DisplayName) === target ||
-    normalizeName(c.FullyQualifiedName) === target ||
-    normalizeName(c.Name) === target
-  ))
-
+  // Use a direct QBO query to fetch at most one exact DisplayName match
+  const existing = await qbService.findCustomerByDisplayName(customerName)
   if (existing) {
-    return { id: String(existing.Id), name: existing.DisplayName || existing.Name || customerName }
+    return { id: String(existing.Id), name: existing.DisplayName || customerName }
   }
-
   const created = await qbService.createCustomer({ DisplayName: customerName })
   return { id: String(created?.Id), name: created?.DisplayName || customerName }
 }
@@ -87,10 +80,8 @@ function buildItemResolver(qbService: any) {
 
 export async function GET() {
   try {
-    const qbService = await getQuickBooksService()
-    const rawInvoices = await qbService.listInvoices()
-    const simplifiedInvoices = toSimpleInvoices(rawInvoices)
-
+    const { teamId } = await requirePermission('invoice:read')
+    const simplifiedInvoices = await listTeamInvoices(teamId)
     return NextResponse.json(simplifiedInvoices)
   } catch (error: any) {
     console.error('Failed to fetch invoices:', error)
@@ -106,47 +97,17 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const qbService = await getQuickBooksService()
+    const { teamId } = await requirePermission('invoice:create')
 
-    const body = (await req.json()) as CreateInvoiceRequest
-    const { customerName, issueDate, dueDate, items } = body
-
-    if (!customerName || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    const body = await req.json()
+    const parsed = CreateInvoiceSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid request', issues: parsed.error.flatten() }, { status: 400 })
     }
+    const { customerName, issueDate, dueDate, items } = parsed.data
 
-    // Find or create customer by name
-    const { id: customerId } = await findOrCreateCustomer(qbService, customerName)
-
-    // Resolve items (products/services) and auto-create if missing
-    const resolveOrCreateItemRef = buildItemResolver(qbService)
-
-    // Build invoice payload with ItemRef where possible
-    const line = await Promise.all(items.map(async (item) => {
-      const itemRef = await resolveOrCreateItemRef(item.productName)
-      return {
-        Amount: (item.quantity ?? 1) * (item.rate ?? 0),
-        DetailType: 'SalesItemLineDetail',
-        Description: item.description || item.productDescription || item.productName || 'Item',
-        SalesItemLineDetail: {
-          Qty: item.quantity ?? 1,
-          UnitPrice: item.rate ?? 0,
-          ...(itemRef ? { ItemRef: itemRef } : {}),
-        },
-      }
-    }))
-
-    const invoicePayload: any = {
-      CustomerRef: { value: customerId, name: customerName },
-      Line: line,
-      ...(issueDate ? { TxnDate: issueDate } : {}),
-      ...(dueDate ? { DueDate: dueDate } : {}),
-    }
-
-    const created = await qbService.createInvoice(invoicePayload)
-    const simple = toSimpleInvoice(created)
-
-    return NextResponse.json({ success: true, invoice: simple, raw: created })
+    const simple = await createTeamInvoice(teamId, { customerName, issueDate, dueDate, items })
+    return NextResponse.json({ success: true, invoice: simple })
   } catch (error: any) {
     console.error('Failed to create invoice:', error)
     return NextResponse.json(

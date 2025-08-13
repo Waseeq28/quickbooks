@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getQuickBooksService } from '@/lib/quickbooks/service';
+import { getQuickBooksServiceForTeam } from '@/lib/quickbooks/service';
+import { requirePermission } from '@/utils/authz-server';
 
 export async function POST(
   request: NextRequest,
@@ -13,7 +14,8 @@ export async function POST(
   }
 
   try {
-    const service = await getQuickBooksService();
+    const { teamId } = await requirePermission('invoice:read');
+    const service = await getQuickBooksServiceForTeam(teamId);
     await service.sendInvoicePdf(invoiceId, email);
     return NextResponse.json({ success: true, message: `Invoice ${invoiceId} sent to ${email}` });
   } catch (error: any) {
