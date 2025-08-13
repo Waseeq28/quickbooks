@@ -1,7 +1,8 @@
 import { openai } from '@ai-sdk/openai';
 import { streamText, tool } from 'ai';
 import { z } from 'zod';
-import { getQuickBooksService } from '@/lib/quickbooks/service';
+import { getQuickBooksServiceForTeam } from '@/lib/quickbooks/service';
+import { requirePermission } from '@/utils/authz-server';
 import { toSimpleInvoices, toSimpleInvoice } from '@/lib/quickbooks/invoices';
 
 // Allow streaming responses up to 30 seconds
@@ -14,7 +15,8 @@ const invoiceTools = {
     parameters: z.object({}), // No parameters needed for fetching all invoices
     execute: async () => {
       try {
-        const service = await getQuickBooksService();
+        const { teamId } = await requirePermission('invoice:read');
+        const service = await getQuickBooksServiceForTeam(teamId);
         const rawInvoices = await service.listInvoices();
         const simplifiedInvoices = toSimpleInvoices(rawInvoices);
         
@@ -41,7 +43,8 @@ const invoiceTools = {
     }),
     execute: async ({ invoiceId }) => {
       try {
-        const service = await getQuickBooksService();
+        const { teamId } = await requirePermission('invoice:read');
+        const service = await getQuickBooksServiceForTeam(teamId);
         const rawInvoice = await service.getInvoice(invoiceId);
         
         if (!rawInvoice) {
@@ -72,7 +75,8 @@ const invoiceTools = {
     parameters: z.object({}),
     execute: async () => {
       try {
-        const service = await getQuickBooksService();
+        const { teamId } = await requirePermission('invoice:read');
+        const service = await getQuickBooksServiceForTeam(teamId);
         const customers = await service.listCustomers();
         
         return {
@@ -136,7 +140,8 @@ const invoiceTools = {
           }))
         };
 
-        const service = await getQuickBooksService();
+        const { teamId } = await requirePermission('invoice:read');
+        const service = await getQuickBooksServiceForTeam(teamId);
         const createdInvoice = await service.createInvoice(invoiceData);
         
         return {
@@ -175,7 +180,8 @@ const invoiceTools = {
     execute: async ({ invoiceId, syncToken, updates }) => {
       try {
         // First get the current invoice to preserve existing data
-        const service = await getQuickBooksService();
+        const { teamId } = await requirePermission('invoice:read');
+        const service = await getQuickBooksServiceForTeam(teamId);
         const currentInvoice: any = await service.getInvoice(invoiceId);
         
         if (!currentInvoice) {
@@ -243,7 +249,8 @@ const invoiceTools = {
     }),
     execute: async ({ invoiceId, syncToken, invoiceReference }) => {
       try {
-        const service = await getQuickBooksService();
+        const { teamId } = await requirePermission('invoice:read');
+        const service = await getQuickBooksServiceForTeam(teamId);
         const result = await service.deleteInvoice(invoiceId, syncToken);
         
         return {
@@ -269,7 +276,8 @@ const invoiceTools = {
     }),
     execute: async ({ invoiceId, email }) => {
       try {
-        const service = await getQuickBooksService();
+        const { teamId } = await requirePermission('invoice:read');
+        const service = await getQuickBooksServiceForTeam(teamId);
         await service.sendInvoicePdf(invoiceId, email);
         return {
           success: true,

@@ -9,6 +9,7 @@ import { InvoiceDetails } from "./InvoiceDetails"
 import { EmptyState } from "./EmptyState"
 import { CreateInvoiceDialog } from "./CreateInvoiceDialog"
 import { useState } from "react"
+import { PermissionGate } from "@/components/AuthzProvider"
 
 interface InvoicePanelProps {
   invoices: SimpleInvoice[]
@@ -71,15 +72,17 @@ export function InvoicePanel({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button 
-              onClick={() => setCreateInvoiceOpen(true)}
-              size="sm" 
-              variant="outline"
-              className="flex-1 gap-2 font-medium bg-card/50 hover:bg-card border-border/50 hover:border-primary/50 shadow-md hover:shadow-lg transition-all duration-200 group"
-            >
-              <Plus className="h-4 w-4 text-primary group-hover:text-primary/80 transition-colors" />
-              <span className="text-foreground group-hover:text-primary transition-colors">Create</span>
-            </Button>
+            <PermissionGate action={'invoice:create'}>
+              <Button 
+                onClick={() => setCreateInvoiceOpen(true)}
+                size="sm" 
+                variant="outline"
+                className="flex-1 gap-2 font-medium bg-card/50 hover:bg-card border-border/50 hover:border-primary/50 shadow-md hover:shadow-lg transition-all duration-200 group"
+              >
+                <Plus className="h-4 w-4 text-primary group-hover:text-primary/80 transition-colors" />
+                <span className="text-foreground group-hover:text-primary transition-colors">Create</span>
+              </Button>
+            </PermissionGate>
             <Button 
               onClick={onFetchInvoices} 
               disabled={isLoading} 

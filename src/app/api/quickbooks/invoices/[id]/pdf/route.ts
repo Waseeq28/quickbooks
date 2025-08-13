@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getQuickBooksService } from '@/lib/quickbooks/service'
+import { getQuickBooksServiceForTeam } from '@/lib/quickbooks/service'
+import { requirePermission } from '@/utils/authz-server'
 
 export async function GET(
   request: NextRequest,
@@ -12,8 +13,9 @@ export async function GET(
       return NextResponse.json({ error: 'Invoice ID is required' }, { status: 400 })
     }
 
-    // Get the PDF from QuickBooks
-    const service = await getQuickBooksService()
+    // Team-scoped service with RBAC
+    const { teamId } = await requirePermission('invoice:read')
+    const service = await getQuickBooksServiceForTeam(teamId)
     const pdfBuffer = await service.getInvoicePdf(invoiceId)
 
     // Return the PDF as a response

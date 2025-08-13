@@ -9,20 +9,18 @@ export type Action =
   | 'member:invite'
   | 'invoice:read'
   | 'invoice:create'
-  | 'invoice:update'
-  | 'invoice:send'
-  | 'invoice:void'
+  | 'invoice:delete'
 
-const roleToActions: Record<TeamRole, Set<Action>> = {
+const actionsOfRole: Record<TeamRole, Set<Action>> = {
   admin: new Set([
     'team:read', 'team:update',
     'member:read', 'member:update', 'member:remove', 'member:invite',
-    'invoice:read', 'invoice:create', 'invoice:update', 'invoice:send', 'invoice:void',
+    'invoice:read', 'invoice:create', 'invoice:delete',
   ]),
   accountant: new Set([
     'team:read',
     'member:read',
-    'invoice:read', 'invoice:create', 'invoice:update', 'invoice:send',
+    'invoice:read', 'invoice:create', 'invoice:delete',
   ]),
   viewer: new Set([
     'team:read',
@@ -33,7 +31,7 @@ const roleToActions: Record<TeamRole, Set<Action>> = {
 
 export function canRole(role: TeamRole | null | undefined, action: Action): boolean {
   if (!role) return false
-  return roleToActions[role].has(action)
+  return actionsOfRole[role].has(action)
 }
 
 export function toTitleCaseRole(role: TeamRole): 'Admin'|'Accountant'|'Viewer' {

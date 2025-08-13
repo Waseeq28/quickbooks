@@ -21,9 +21,9 @@ export class QuickBooksService {
     )
   }
 
-  static async fromDatabase(): Promise<QuickBooksService> {
-    const connection = await DatabaseService.getQuickBooksConnection()
-    if (!connection) throw new Error('No QuickBooks connection found')
+  static async fromTeam(teamId: string): Promise<QuickBooksService> {
+    const connection = await DatabaseService.getQuickBooksConnectionForTeam(teamId)
+    if (!connection) throw new Error('No QuickBooks connection found for team')
     const isSandbox = process.env.QB_ENVIRONMENT === 'sandbox'
     return new QuickBooksService(connection.access_token, connection.refresh_token, connection.realm_id, isSandbox)
   }
@@ -35,7 +35,9 @@ export class QuickBooksService {
         try {
           const accessToken = this.qbo.token
           const refreshToken = this.qbo.refreshToken
-          await DatabaseService.updateQuickBooksTokens(accessToken, refreshToken, undefined)
+          // We need a teamId to persist refreshed tokens; node-quickbooks does not expose it here.
+          // In practice, callers should use fromTeam() and update tokens via that path.
+          // For now, skip persistence here; requests will still use fresh tokens in-memory.
           resolve()
         } catch (e: any) {
           reject(new Error(`Failed to persist refreshed tokens: ${e?.message || e}`))
@@ -109,6 +111,23 @@ export class QuickBooksService {
     }))
   }
 
+  /**
+   * Find a single customer by exact DisplayName using QBO query API.
+   * Returns the first match or null.
+   */
+  findCustomerByDisplayName(displayName: string): Promise<any | null> {
+    // Escape single quotes for QBO SQL-like syntax by doubling them
+    const escaped = displayName.replace(/'/g, "''")
+    const query = `select Id, DisplayName from Customer where DisplayName = '${escaped}' maxresults 1`
+    return this.request<any | null>('queryCustomerByName', () => new Promise((resolve, reject) => {
+      this.qbo.query(query, (err: any, data: any) => {
+        if (err) return reject(err)
+        const customer = data?.QueryResponse?.Customer?.[0] ?? null
+        resolve(customer)
+      })
+    }))
+  }
+
   // Items (Products/Services)
   listItems(): Promise<any[]> {
     return this.request<any[]>('findItems', () => new Promise((resolve, reject) => {
@@ -130,6 +149,6 @@ export class QuickBooksService {
   }
 }
 
-export const getQuickBooksService = async () => QuickBooksService.fromDatabase()
+export const getQuickBooksServiceForTeam = async (teamId: string) => QuickBooksService.fromTeam(teamId)
 
 

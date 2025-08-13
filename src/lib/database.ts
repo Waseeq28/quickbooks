@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 
 export interface QuickBooksConnection {
   id: string
-  user_id: string
+  team_id: string
   access_token: string
   refresh_token: string
   realm_id: string
@@ -13,83 +13,72 @@ export interface QuickBooksConnection {
 
 export class DatabaseService {
   
-  // Get QuickBooks connection for authenticated user
-  static async getQuickBooksConnection(): Promise<QuickBooksConnection | null> {
-    const supabase = await createClient()
-    
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      throw new Error('User not authenticated')
-    }
+  // Remove user-scoped methods. From now on, connections are strictly team-scoped.
 
+  // TEAM-SCOPED: Get QuickBooks connection for a given team.
+  static async getQuickBooksConnectionForTeam(teamId: string): Promise<QuickBooksConnection | null> {
+    const supabase = await createClient()
     const { data, error } = await supabase
       .from('quickbooks_connections')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('team_id', teamId)
       .single()
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        // No connection found
+      if ((error as any).code === 'PGRST116') {
         return null
       }
-      throw new Error(`Failed to get QuickBooks connection: ${error.message}`)
+      throw new Error(`Failed to get QuickBooks connection for team: ${error.message}`)
     }
-
     return data
   }
 
-  // Save or update QuickBooks connection for authenticated user
-  static async saveQuickBooksConnection(
+  static async saveQuickBooksConnectionForTeam(
+    teamId: string,
     accessToken: string,
     refreshToken: string,
     realmId: string,
     expiresAt?: Date
   ): Promise<QuickBooksConnection> {
     const supabase = await createClient()
-    
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      throw new Error('User not authenticated')
-    }
 
+    // Defensive check: prevent linking a realm to multiple teams at app level
+    const { data: existingByRealm } = await supabase
+      .from('quickbooks_connections')
+      .select('team_id')
+      .eq('realm_id', realmId)
+      .maybeSingle()
+    if (existingByRealm && existingByRealm.team_id !== teamId) {
+      const err: any = new Error('This QuickBooks company is already linked to another team')
+      err.code = 'REALM_ALREADY_LINKED'
+      throw err
+    }
     const connectionData = {
-      user_id: user.id,
+      team_id: teamId,
       access_token: accessToken,
       refresh_token: refreshToken,
       realm_id: realmId,
       expires_at: expiresAt?.toISOString(),
     }
-
-    // Use upsert to handle both insert and update
     const { data, error } = await supabase
       .from('quickbooks_connections')
-      .upsert(connectionData, {
-        onConflict: 'user_id'
-      })
+      .upsert(connectionData, { onConflict: 'team_id' })
       .select()
       .single()
-
     if (error) {
-      throw new Error(`Failed to save QuickBooks connection: ${error.message}`)
+      throw new Error(`Failed to save QuickBooks connection for team: ${error.message}`)
     }
-
     return data
   }
 
   // Update QuickBooks tokens
-  static async updateQuickBooksTokens(
+  static async updateQuickBooksTokensForTeam(
+    teamId: string,
     accessToken: string,
     refreshToken: string,
     expiresAt?: Date
   ): Promise<QuickBooksConnection> {
     const supabase = await createClient()
-    
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      throw new Error('User not authenticated')
-    }
-
     const { data, error } = await supabase
       .from('quickbooks_connections')
       .update({
@@ -97,33 +86,24 @@ export class DatabaseService {
         refresh_token: refreshToken,
         expires_at: expiresAt?.toISOString(),
       })
-      .eq('user_id', user.id)
+      .eq('team_id', teamId)
       .select()
       .single()
-
     if (error) {
-      throw new Error(`Failed to update QuickBooks tokens: ${error.message}`)
+      throw new Error(`Failed to update QuickBooks tokens for team: ${error.message}`)
     }
-
     return data
   }
 
-  // Delete QuickBooks connection for authenticated user
-  static async deleteQuickBooksConnection(): Promise<void> {
+  // Delete QuickBooks connection for a team
+  static async deleteQuickBooksConnectionForTeam(teamId: string): Promise<void> {
     const supabase = await createClient()
-    
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      throw new Error('User not authenticated')
-    }
-
     const { error } = await supabase
       .from('quickbooks_connections')
       .delete()
-      .eq('user_id', user.id)
-
+      .eq('team_id', teamId)
     if (error) {
-      throw new Error(`Failed to delete QuickBooks connection: ${error.message}`)
+      throw new Error(`Failed to delete QuickBooks connection for team: ${error.message}`)
     }
   }
 }
