@@ -1,33 +1,35 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from 'react'
-import { createClient } from '@/utils/supabase/client'
-import { FileText, Sparkles, Zap } from "lucide-react"
-import { UserMenu } from './UserMenu'
+import { useEffect, useState } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { FileText, Sparkles, Zap } from "lucide-react";
+import { UserMenu } from "../UserMenu";
 
 export function Header() {
-  const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const supabase = createClient()
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-      setLoading(false)
-    }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+      setLoading(false);
+    };
 
-    getUser()
+    getUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setUser(session?.user ?? null)
-        setLoading(false)
-      }
-    )
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
-    return () => subscription.unsubscribe()
-  }, [supabase.auth])
+    return () => subscription.unsubscribe();
+  }, [supabase.auth]);
 
   return (
     <header className="sticky top-0 z-50 w-full glass-effect border-b border-border/50 shadow-lg">
@@ -50,21 +52,21 @@ export function Header() {
               </p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-card/50 rounded-lg border border-border/30">
               <div className="flex items-center gap-1.5">
                 <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse shadow-sm"></div>
                 <Zap className="h-3 w-3 text-green-400" />
               </div>
-              <span className="text-xs font-medium text-muted-foreground">Live</span>
-            </div>            
-            {!loading && user && (
-              <UserMenu user={user} />
-            )}
+              <span className="text-xs font-medium text-muted-foreground">
+                Live
+              </span>
+            </div>
+            {!loading && user && <UserMenu user={user} />}
           </div>
         </div>
       </div>
     </header>
-  )
-} 
+  );
+}

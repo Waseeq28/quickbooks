@@ -1,15 +1,15 @@
-import { FileText } from "lucide-react"
+import { FileText } from "lucide-react";
 
 interface EmptyStateProps {
-  title: string
-  description: string
-  icon?: React.ComponentType<{ className?: string }>
+  title: string;
+  description: string;
+  icon?: React.ComponentType<{ className?: string }>;
 }
 
-export function EmptyState({ 
-  title, 
-  description, 
-  icon: Icon = FileText 
+export function EmptyState({
+  title,
+  description,
+  icon: Icon = FileText,
 }: EmptyStateProps) {
   return (
     <div className="flex items-center justify-center h-full">
@@ -23,5 +23,5 @@ export function EmptyState({
         </p>
       </div>
     </div>
-  )
+  );
 }

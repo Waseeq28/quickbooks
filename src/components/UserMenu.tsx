@@ -8,22 +8,16 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ProfileDialog } from "@/components/ProfileDialog";
-import { TeamSettingsDialog } from "@/components/TeamSettingsDialog";
+import { ProfileDialog } from "@/components/profile";
+import { TeamSettingsDialog } from "@/components/teams";
 import { toast } from "sonner";
 // Supabase-backed current team name will be loaded dynamically
 import { useEffect } from "react";
-import {
-  LogOut,
-  User,
-  Building2,
-  ChevronDown,
-} from "lucide-react";
+import { LogOut, User, Building2, ChevronDown } from "lucide-react";
 
 interface UserMenuProps {
   user: {
@@ -48,15 +42,17 @@ export function UserMenu({ user }: UserMenuProps) {
   // Load current team name and refresh on team events
   useEffect(() => {
     const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         setCurrentTeamName("No Team Selected");
         return;
       }
       const { data, error } = await supabase
-        .from('profiles')
-        .select('current_team_id, team:current_team_id(name)')
-        .eq('id', user.id)
+        .from("profiles")
+        .select("current_team_id, team:current_team_id(name)")
+        .eq("id", user.id)
         .single();
       if (error) {
         setCurrentTeamName("No Team Selected");
@@ -69,27 +65,33 @@ export function UserMenu({ user }: UserMenuProps) {
 
     load();
 
-    const handleTeamSwitch = () => { load(); };
-    const handleTeamCreated = () => { load(); };
-    window.addEventListener('teamSwitched', handleTeamSwitch);
-    window.addEventListener('teamCreated', handleTeamCreated);
+    const handleTeamSwitch = () => {
+      load();
+    };
+    const handleTeamCreated = () => {
+      load();
+    };
+    window.addEventListener("teamSwitched", handleTeamSwitch);
+    window.addEventListener("teamCreated", handleTeamCreated);
     return () => {
-      window.removeEventListener('teamSwitched', handleTeamSwitch);
-      window.removeEventListener('teamCreated', handleTeamCreated);
+      window.removeEventListener("teamSwitched", handleTeamSwitch);
+      window.removeEventListener("teamCreated", handleTeamCreated);
     };
   }, [supabase]);
 
   const handleUserUpdate = async () => {
     // Refresh from DB
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       setCurrentTeamName("No Team Selected");
       return;
     }
     const { data } = await supabase
-      .from('profiles')
-      .select('current_team_id, team:current_team_id(name)')
-      .eq('id', user.id)
+      .from("profiles")
+      .select("current_team_id, team:current_team_id(name)")
+      .eq("id", user.id)
       .single();
     // @ts-expect-error - PostgREST nested select alias
     const name = data?.team?.name as string | undefined;
@@ -121,7 +123,8 @@ export function UserMenu({ user }: UserMenuProps) {
     });
   };
 
-  const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+  const displayName =
+    user.user_metadata?.full_name || user.email?.split("@")[0] || "User";
   const initials = displayName.charAt(0).toUpperCase();
 
   return (
@@ -135,7 +138,10 @@ export function UserMenu({ user }: UserMenuProps) {
           >
             <div className="flex items-center gap-2">
               <Avatar className="h-6 w-6">
-                <AvatarImage src={user.user_metadata?.avatar_url} alt={displayName} />
+                <AvatarImage
+                  src={user.user_metadata?.avatar_url}
+                  alt={displayName}
+                />
                 <AvatarFallback className="bg-primary/10 text-primary font-medium text-xs">
                   {initials}
                 </AvatarFallback>
@@ -148,12 +154,15 @@ export function UserMenu({ user }: UserMenuProps) {
           </Button>
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="end" className="w-56 p-2 border-2 border-gray-800">
+        <DropdownMenuContent
+          align="end"
+          className="w-56 p-2 border-2 border-gray-800"
+        >
           {/* <DropdownMenuLabel className="font-normal text-xs text-muted-foreground px-2 pb-2">
             {user.email}
           </DropdownMenuLabel> */}
 
-          <DropdownMenuItem 
+          <DropdownMenuItem
             className="py-2"
             onClick={() => setProfileOpen(true)}
           >
@@ -161,12 +170,16 @@ export function UserMenu({ user }: UserMenuProps) {
             <span>My Profile</span>
           </DropdownMenuItem>
 
-          <DropdownMenuItem 
+          <DropdownMenuItem
             className="py-2"
             onClick={() => setTeamSettingsOpen(true)}
           >
             <Building2 className="mr-2 h-4 w-4" />
-            <span>{currentTeamName === "No Team Selected" ? "Team Settings" : currentTeamName}</span>
+            <span>
+              {currentTeamName === "No Team Selected"
+                ? "Team Settings"
+                : currentTeamName}
+            </span>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator className="my-2" />
@@ -177,19 +190,19 @@ export function UserMenu({ user }: UserMenuProps) {
             className="py-2"
           >
             <LogOut className="mr-2 h-4 w-4" />
-            <span>{isLoading ? 'Signing out...' : 'Sign out'}</span>
+            <span>{isLoading ? "Signing out..." : "Sign out"}</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <ProfileDialog 
+      <ProfileDialog
         open={profileOpen}
         onOpenChange={setProfileOpen}
         user={user}
         onUserUpdate={handleUserUpdate}
       />
 
-      <TeamSettingsDialog 
+      <TeamSettingsDialog
         open={teamSettingsOpen}
         onOpenChange={setTeamSettingsOpen}
         user={user}
