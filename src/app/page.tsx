@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import { useChat } from '@ai-sdk/react'
-import { InvoicePanel } from "@/components/InvoicePanel"
-import { ChatPanel } from "@/components/ChatPanel"
-import { Header } from "@/components/Header"
-import { Dashboard } from "@/components/Dashboard"
-import { useInvoiceManagement } from "@/hooks/useInvoiceManagement"
+import { useChat } from "@ai-sdk/react";
+import { InvoicePanel } from "@/components/invoices";
+import { ChatPanel } from "@/components/chat";
+import { Header } from "@/components/layout/Header";
+import { Dashboard } from "@/components/dashboard/Dashboard";
+import { useInvoiceManagement } from "@/hooks/useInvoiceManagement";
 
 export default function InvoiceManagement() {
   const {
@@ -17,21 +17,22 @@ export default function InvoiceManagement() {
     fetchInvoices,
     handleToolInvocationResult,
     startFetchingInvoices,
-  } = useInvoiceManagement()
-  
+  } = useInvoiceManagement();
+
   // AI SDK useChat hook with tool result handling
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
-    onToolCall: ({ toolCall }) => {
-      if (toolCall.toolName === 'fetchAllInvoices') {
-        startFetchingInvoices()
-      }
-    },
-    onFinish: (message) => {
-      for (const toolInvocation of message.toolInvocations || []) {
-        handleToolInvocationResult(toolInvocation)
-      }
-    }
-  })
+  const { messages, input, handleInputChange, handleSubmit, isLoading } =
+    useChat({
+      onToolCall: ({ toolCall }) => {
+        if (toolCall.toolName === "fetchAllInvoices") {
+          startFetchingInvoices();
+        }
+      },
+      onFinish: (message) => {
+        for (const toolInvocation of message.toolInvocations || []) {
+          handleToolInvocationResult(toolInvocation);
+        }
+      },
+    });
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -61,5 +62,5 @@ export default function InvoiceManagement() {
         </div>
       </div>
     </div>
-  )
+  );
 }

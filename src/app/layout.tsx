@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
-import { AuthzProvider } from "@/components/AuthzProvider";
+import { AuthzProvider } from "@/components/providers/AuthzProvider";
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ["latin"],
-  display: 'swap',
-  variable: '--font-inter',
+  display: "swap",
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
@@ -22,10 +22,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className={`${inter.className} min-h-screen bg-background antialiased`}>
-        <AuthzProvider>
-          {children}
-        </AuthzProvider>
+      <body
+        className={`${inter.className} min-h-screen bg-background antialiased`}
+      >
+        <AuthzProvider>{children}</AuthzProvider>
         <Toaster />
       </body>
     </html>
