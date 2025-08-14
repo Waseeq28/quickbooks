@@ -10,6 +10,8 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { CreateInvoiceDialog } from "@/components/invoices/CreateInvoiceDialog";
 import { useState } from "react";
 import { PermissionGate } from "@/components/providers/AuthzProvider";
+import { EditInvoiceDialog } from "@/components/invoices/EditInvoiceDialog";
+import { useEffect } from "react";
 
 interface InvoicePanelProps {
   invoices: SimpleInvoice[];
@@ -29,6 +31,7 @@ export function InvoicePanel({
   error,
 }: InvoicePanelProps) {
   const [createInvoiceOpen, setCreateInvoiceOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   const handleDownloadPdf = async (invoiceId: string) => {
     try {
@@ -54,6 +57,14 @@ export function InvoicePanel({
       console.error("Error downloading PDF:", error);
     }
   };
+
+  // Listen for edit open requests dispatched from children using effect
+  useEffect(() => {
+    const handler = () => setEditOpen(true);
+    window.addEventListener("openEditInvoiceDialog", handler as any);
+    return () =>
+      window.removeEventListener("openEditInvoiceDialog", handler as any);
+  }, []);
 
   return (
     <div className="flex flex-col flex-1 bg-background overflow-hidden">
@@ -93,7 +104,9 @@ export function InvoicePanel({
               className="flex-1 gap-2 font-medium bg-card/50 hover:bg-card border-border/50 hover:border-primary/50 shadow-md hover:shadow-lg transition-all duration-200 group"
             >
               <RefreshCw
-                className={`h-4 w-4 text-primary group-hover:text-primary/80 transition-colors ${isLoading ? "animate-spin" : "group-hover:rotate-180"} duration-300`}
+                className={`h-4 w-4 text-primary group-hover:text-primary/80 transition-colors ${
+                  isLoading ? "animate-spin" : "group-hover:rotate-180"
+                } duration-300`}
               />
               <span className="text-foreground group-hover:text-primary transition-colors">
                 {isLoading ? "Loading..." : "Refresh"}
@@ -140,6 +153,14 @@ export function InvoicePanel({
         onInvoiceCreated={async () => {
           await onFetchInvoices();
         }}
+      />
+
+      {/* Edit Invoice Dialog */}
+      <EditInvoiceDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        invoice={selectedInvoice}
+        onSaved={onFetchInvoices}
       />
     </div>
   );
