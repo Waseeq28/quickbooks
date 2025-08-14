@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { DatabaseService } from "@/lib/database";
+import { DatabaseService } from "@/services/quickbooks-connections";
 import { getServerAuthzContext } from "@/utils/authz-server";
 
 export async function GET(request: NextRequest) {
@@ -105,10 +105,63 @@ export async function GET(request: NextRequest) {
       );
 
       const responseHtml = `
-        <html><head><title>QuickBooks Connected Successfully!</title></head>
-        <body><h1>✅ QuickBooks Connected Successfully!</h1>
-        <p>Your QuickBooks account has been securely connected and linked to your team.</p>
-        <p><a href="/">Go to Dashboard</a></p></body></html>`;
+        <!doctype html>
+        <html lang="en">
+          <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <title>QuickBooks Connected</title>
+            <style>
+              :root { color-scheme: light dark; }
+              * { box-sizing: border-box; }
+              html, body { height: 100%; margin: 0; }
+              body {
+                display: grid;
+                place-items: center;
+                font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+                background: radial-gradient(1200px 600px at 10% -10%, rgba(59,130,246,.08), transparent),
+                            radial-gradient(1200px 600px at 110% 110%, rgba(16,185,129,.08), transparent);
+                padding: 24px;
+              }
+              .card {
+                width: min(560px, 92vw);
+                border: 1px solid rgba(148,163,184,.3);
+                border-radius: 14px;
+                padding: 24px;
+                background: rgb(17 24 39 / 0.75);
+                backdrop-filter: blur(8px);
+                color: #e5e7eb;
+              }
+              .title { display: flex; align-items: center; gap: 12px; margin: 0 0 8px; font-size: 1.25rem; font-weight: 700; }
+              .subtitle { margin: 0 0 20px; color: #94a3b8; font-size: .95rem; }
+              .row { display: flex; gap: 12px; align-items: center; justify-content: space-between; }
+              .badge { padding: 4px 10px; border-radius: 999px; font-size: .75rem; background: rgba(16,185,129,.15); color: #34d399; border: 1px solid rgba(16,185,129,.3); }
+              .actions { display: flex; gap: 10px; margin-top: 16px; }
+              .btn { padding: 8px 14px; border-radius: 10px; border: 1px solid rgba(148,163,184,.3); color: #e5e7eb; text-decoration: none; font-weight: 600; }
+              .btn:hover { border-color: rgba(59,130,246,.5); }
+              .btn-primary { background: rgba(59,130,246,.12); border-color: rgba(59,130,246,.45); color: #93c5fd; }
+              .hint { color: #94a3b8; font-size: .8rem; margin-top: 8px; }
+            </style>
+            <script>
+              // Soft-redirect back to app after a moment
+              setTimeout(() => { window.location.replace('/'); }, 1500);
+            </script>
+          </head>
+          <body>
+            <section class="card">
+              <h1 class="title">✅ QuickBooks Connected</h1>
+              <p class="subtitle">Your QuickBooks account has been securely connected and linked to your team.</p>
+              <div class="row">
+                <span class="badge">Connected</span>
+              </div>
+              <div class="actions">
+                <a class="btn btn-primary" href="/">Go to Dashboard</a>
+                <a class="btn" href="/docs">View Docs</a>
+              </div>
+              <p class="hint">You will be redirected automatically.</p>
+            </section>
+          </body>
+        </html>`;
       const response = new NextResponse(responseHtml, {
         headers: { "Content-Type": "text/html" },
       });
