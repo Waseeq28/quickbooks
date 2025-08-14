@@ -119,6 +119,10 @@ export function InvoiceDetails({
             <h3 className="font-bold text-base text-blue-500 flex items-center gap-1.5">
               Actions
             </h3>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Performing actions on invoices requires Accountant or Admin
+              access.
+            </p>
             <InvoiceActions
               invoiceId={invoice.id}
               onDownloadPdf={onDownloadPdf}

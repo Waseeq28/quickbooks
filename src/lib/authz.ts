@@ -7,10 +7,13 @@ export type Action =
   | "member:update"
   | "member:remove"
   | "member:invite"
+  | "quickbooks:status:read"
   | "invoice:read"
   | "invoice:create"
   | "invoice:update"
-  | "invoice:delete";
+  | "invoice:delete"
+  | "invoice:send"
+  | "invoice:download";
 
 const actionsOfRole: Record<TeamRole, Set<Action>> = {
   admin: new Set([
@@ -20,20 +23,31 @@ const actionsOfRole: Record<TeamRole, Set<Action>> = {
     "member:update",
     "member:remove",
     "member:invite",
+    "quickbooks:status:read",
     "invoice:read",
     "invoice:create",
     "invoice:update",
     "invoice:delete",
+    "invoice:send",
+    "invoice:download",
   ]),
   accountant: new Set([
     "team:read",
     "member:read",
+    "quickbooks:status:read",
     "invoice:read",
     "invoice:create",
     "invoice:update",
     "invoice:delete",
+    "invoice:send",
+    "invoice:download",
   ]),
-  viewer: new Set(["team:read", "member:read", "invoice:read"]),
+  viewer: new Set([
+    "team:read",
+    "member:read",
+    "invoice:read",
+    "quickbooks:status:read",
+  ]),
 };
 
 export function canRole(

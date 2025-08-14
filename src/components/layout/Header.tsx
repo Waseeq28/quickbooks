@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { FileText, Sparkles, Zap } from "lucide-react";
+import { FileText, Sparkles } from "lucide-react";
 import { UserMenu } from "../UserMenu";
 
 export function Header() {
@@ -54,15 +54,6 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-card/50 rounded-lg border border-border/30">
-              <div className="flex items-center gap-1.5">
-                <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse shadow-sm"></div>
-                <Zap className="h-3 w-3 text-green-400" />
-              </div>
-              <span className="text-xs font-medium text-muted-foreground">
-                Live
-              </span>
-            </div>
             {!loading && user && <UserMenu user={user} />}
           </div>
         </div>

@@ -164,7 +164,7 @@ const invoiceTools = {
           })),
         };
 
-        const { teamId } = await requirePermission("invoice:read");
+        const { teamId } = await requirePermission("invoice:create");
         const service = await getQuickBooksServiceForTeam(teamId);
         const createdInvoice = await service.createInvoice(invoiceData);
 
@@ -228,7 +228,7 @@ const invoiceTools = {
     execute: async ({ invoiceId, syncToken, updates }) => {
       try {
         // First get the current invoice to preserve existing data
-        const { teamId } = await requirePermission("invoice:read");
+        const { teamId } = await requirePermission("invoice:update");
         const service = await getQuickBooksServiceForTeam(teamId);
         const currentInvoice: any = await service.getInvoice(invoiceId);
 
@@ -272,11 +272,12 @@ const invoiceTools = {
 
         const result = await service.updateInvoice(updatedInvoice);
 
+        const invoiceIdOut = (result as any)?.Id || (result as any)?.DocNumber || invoiceId;
         return {
           success: true,
-          message: `Invoice ${invoiceId} updated successfully.`,
+          message: `Invoice ${invoiceIdOut} updated successfully.`,
           invoice: result,
-          invoiceId: result?.Id,
+          invoiceId: invoiceIdOut,
         };
       } catch (error: any) {
         return {
@@ -305,7 +306,7 @@ const invoiceTools = {
     }),
     execute: async ({ invoiceId, syncToken, invoiceReference }) => {
       try {
-        const { teamId } = await requirePermission("invoice:read");
+        const { teamId } = await requirePermission("invoice:delete");
         const service = await getQuickBooksServiceForTeam(teamId);
         const result = await service.deleteInvoice(invoiceId, syncToken);
 
@@ -333,7 +334,7 @@ const invoiceTools = {
     }),
     execute: async ({ invoiceId, email }) => {
       try {
-        const { teamId } = await requirePermission("invoice:read");
+        const { teamId } = await requirePermission("invoice:send");
         const service = await getQuickBooksServiceForTeam(teamId);
         await service.sendInvoicePdf(invoiceId, email);
         return {
@@ -366,8 +367,9 @@ const invoiceTools = {
     }),
     execute: async ({ invoiceId, invoiceReference }) => {
       try {
+        const { teamId } = await requirePermission("invoice:download");
+        const service = await getQuickBooksServiceForTeam(teamId);
         // Verify the invoice exists first
-        const service = await getQuickBooksService();
         const invoice = await service.getInvoice(invoiceId);
 
         if (!invoice) {

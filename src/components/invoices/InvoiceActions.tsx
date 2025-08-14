@@ -98,46 +98,50 @@ export function InvoiceActions({
   return (
     <div className="pt-2.5 space-y-2.5">
       <div className="flex items-end gap-2">
-        <div className="flex-grow">
-          <Input
-            id="emailForInvoice"
-            type="email"
-            placeholder="Enter recipient email"
-            value={emailToSend}
-            onChange={(e) => setEmailToSend(e.target.value)}
-            disabled={isSendingEmail}
-            className="mt-1 bg-input border-border/50 focus:border-primary/50 text-sm h-9"
-          />
-        </div>
+        <PermissionGate action={"invoice:send"}>
+          <div className="flex-grow">
+            <Input
+              id="emailForInvoice"
+              type="email"
+              placeholder="Enter recipient email"
+              value={emailToSend}
+              onChange={(e) => setEmailToSend(e.target.value)}
+              disabled={isSendingEmail}
+              className="mt-1 bg-input border-border/50 focus:border-primary/50 text-sm h-9"
+            />
+          </div>
 
-        <Button
-          onClick={handleSendEmail}
-          disabled={isSendingEmail || !emailToSend || !!sendEmailSuccess}
-          className="gap-1.5 h-9 bg-accent"
-          variant="outline"
-          size="sm"
-        >
-          {isSendingEmail ? (
-            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-          ) : sendEmailSuccess ? (
-            <Check className="h-3.5 w-3.5" />
-          ) : (
-            <Mail className="h-3.5 w-3.5" />
-          )}
-          <span className="text-sm">
-            {isSendingEmail ? "Sending" : sendEmailSuccess ? "Sent!" : "Send"}
-          </span>
-        </Button>
+          <Button
+            onClick={handleSendEmail}
+            disabled={isSendingEmail || !emailToSend || !!sendEmailSuccess}
+            className="gap-1.5 h-9 bg-accent"
+            variant="outline"
+            size="sm"
+          >
+            {isSendingEmail ? (
+              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+            ) : sendEmailSuccess ? (
+              <Check className="h-3.5 w-3.5" />
+            ) : (
+              <Mail className="h-3.5 w-3.5" />
+            )}
+            <span className="text-sm">
+              {isSendingEmail ? "Sending" : sendEmailSuccess ? "Sent!" : "Send"}
+            </span>
+          </Button>
+        </PermissionGate>
 
-        <Button
-          onClick={() => onDownloadPdf(invoiceId)}
-          variant="outline"
-          className="gap-1.5 h-9 bg-accent"
-          size="sm"
-        >
-          <Download className="h-3.5 w-3.5" />
-          <span className="text-sm">PDF</span>
-        </Button>
+        <PermissionGate action={"invoice:download"}>
+          <Button
+            onClick={() => onDownloadPdf(invoiceId)}
+            variant="outline"
+            className="gap-1.5 h-9 bg-accent"
+            size="sm"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span className="text-sm">PDF</span>
+          </Button>
+        </PermissionGate>
 
         <PermissionGate action={"invoice:update"}>
           <Button
