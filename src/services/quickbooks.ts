@@ -206,13 +206,32 @@ export class QuickBooksService {
     const escaped = displayName.replace(/'/g, "''");
     const query = `select Id, DisplayName from Customer where DisplayName = '${escaped}' maxresults 1`;
     return this.request<any | null>(
-      "queryCustomerByName",
+      "findCustomerByDisplayName",
       () =>
         new Promise((resolve, reject) => {
-          this.qbo.query(query, (err: any, data: any) => {
+          const handleResult = (err: any, data: any) => {
             if (err) return reject(err);
             const customer = data?.QueryResponse?.Customer?.[0] ?? null;
             resolve(customer);
+          };
+
+          // Prefer native query when available (older node-quickbooks versions)
+          if (typeof this.qbo.query === "function") {
+            this.qbo.query(query, handleResult);
+            return;
+          }
+
+          // Fallback: fetch customers and filter locally when `query` is not provided
+          this.qbo.findCustomers((err: any, data: any) => {
+            if (err) return reject(err);
+            const customers: any[] = data?.QueryResponse?.Customer ?? [];
+            const target = displayName.trim().toLowerCase();
+            const found = customers.find(
+              (c: any) => (c?.DisplayName || "").trim().toLowerCase() === target,
+            );
+            handleResult(null, {
+              QueryResponse: { Customer: found ? [found] : [] },
+            });
           });
         }),
     );
