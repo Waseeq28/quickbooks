@@ -19,7 +19,23 @@ export async function POST(
   try {
     const { teamId } = await requirePermission("invoice:send");
     const service = await getQuickBooksServiceForTeam(teamId);
-    await service.sendInvoicePdf(invoiceId, email);
+
+    // UI passes DocNumber; QuickBooks email API expects internal Id
+    const invoices = await service.listInvoices();
+    const target = invoices.find(
+      (inv: any) => String(inv.DocNumber) === String(invoiceId),
+    );
+    if (!target) {
+      return NextResponse.json(
+        { success: false, error: "Invoice not found" },
+        { status: 404 },
+      );
+    }
+    const quickbooksId = (target as any).Id
+      ? String((target as any).Id)
+      : String(target.DocNumber);
+
+    await service.sendInvoicePdf(quickbooksId, email);
     return NextResponse.json({
       success: true,
       message: `Invoice ${invoiceId} sent to ${email}`,
