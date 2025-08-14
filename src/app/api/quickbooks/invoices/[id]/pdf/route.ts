@@ -4,10 +4,10 @@ import { requirePermission } from "@/utils/authz-server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: { id: string } },
 ) {
   try {
-    const { id: invoiceId } = await params;
+    const { id: invoiceId } = params;
 
     if (!invoiceId) {
       return NextResponse.json(
@@ -19,7 +19,24 @@ export async function GET(
     // Team-scoped service with RBAC
     const { teamId } = await requirePermission("invoice:download");
     const service = await getQuickBooksServiceForTeam(teamId);
-    const pdfBuffer = await service.getInvoicePdf(invoiceId);
+
+    // The UI passes DocNumber; QuickBooks APIs require the internal Id for PDF.
+    // Resolve DocNumber -> Id from the current invoice list.
+    const invoices = await service.listInvoices();
+    const target = invoices.find(
+      (inv: any) => String(inv.DocNumber) === String(invoiceId),
+    );
+    if (!target) {
+      return NextResponse.json(
+        { error: "Invoice not found" },
+        { status: 404 },
+      );
+    }
+    const quickbooksId = (target as any).Id
+      ? String((target as any).Id)
+      : String(target.DocNumber);
+
+    const pdfBuffer = await service.getInvoicePdf(quickbooksId);
 
     // Return the PDF as a response
     return new NextResponse(pdfBuffer, {
