@@ -31,7 +31,7 @@ export function ChatPanel({
   useEffect(() => {
     if (scrollAreaRef.current) {
       const scrollContainer = scrollAreaRef.current.querySelector(
-        "[data-radix-scroll-area-viewport]"
+        "[data-radix-scroll-area-viewport]",
       );
       if (scrollContainer) {
         scrollContainer.scrollTop = scrollContainer.scrollHeight;
@@ -106,41 +106,47 @@ export function ChatPanel({
             {messages
               .filter((message) => {
                 // Filter out empty messages or messages with no content
-                if (typeof message.content === 'string') {
-                  return message.content.trim().length > 0
+                if (typeof message.content === "string") {
+                  return message.content.trim().length > 0;
                 }
-                return message.content !== null && message.content !== undefined
+                return (
+                  message.content !== null && message.content !== undefined
+                );
               })
               .map((message) => (
-              <div
-                key={message.id}
-                className={`flex gap-3 ${
-                  message.role === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
                 <div
-                  className={`max-w-[80%] px-3 py-2.5 rounded-xl ${
-                    message.role === "user"
-                      ? "bg-primary/10 text-primary-foreground shadow-sm border border-primary/20"
-                      : "bg-muted/50 border border-border/30 shadow-sm text-foreground"
+                  key={message.id}
+                  className={`flex gap-3 ${
+                    message.role === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
-                  <p className={`text-sm leading-relaxed whitespace-pre-wrap break-words ${
-                    message.role === "user" ? "text-foreground" : "text-foreground"
-                  }`}>
-                    {typeof message.content === "string"
-                      ? message.content
-                      : JSON.stringify(message.content)}
-                  </p>
-                </div>
-
-                {message.role === "user" && (
-                  <div className="flex items-start justify-center w-7 h-7 bg-primary/10 rounded-lg flex-shrink-0 mt-1 border border-primary/20">
-                    <User className="h-3.5 w-3.5 text-primary mt-1.5" />
+                  <div
+                    className={`max-w-[80%] px-3 py-2.5 rounded-xl ${
+                      message.role === "user"
+                        ? "bg-primary/10 text-primary-foreground shadow-sm border border-primary/20"
+                        : "bg-muted/50 border border-border/30 shadow-sm text-foreground"
+                    }`}
+                  >
+                    <p
+                      className={`text-sm leading-relaxed whitespace-pre-wrap break-words ${
+                        message.role === "user"
+                          ? "text-foreground"
+                          : "text-foreground"
+                      }`}
+                    >
+                      {typeof message.content === "string"
+                        ? message.content
+                        : JSON.stringify(message.content)}
+                    </p>
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {message.role === "user" && (
+                    <div className="flex items-start justify-center w-7 h-7 bg-primary/10 rounded-lg flex-shrink-0 mt-1 border border-primary/20">
+                      <User className="h-3.5 w-3.5 text-primary mt-1.5" />
+                    </div>
+                  )}
+                </div>
+              ))}
 
             {/* Loading indicator */}
             {isLoading && (
@@ -148,9 +154,18 @@ export function ChatPanel({
                 <div className="px-3 py-2.5 bg-muted/50 border border-border/30 rounded-xl shadow-sm">
                   <div className="flex items-center space-x-2">
                     <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      <div
+                        className="w-2 h-2 bg-primary rounded-full animate-bounce"
+                        style={{ animationDelay: "0ms" }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-primary rounded-full animate-bounce"
+                        style={{ animationDelay: "150ms" }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-primary rounded-full animate-bounce"
+                        style={{ animationDelay: "300ms" }}
+                      ></div>
                     </div>
                     <span className="text-sm text-muted-foreground font-medium ml-2">
                       AI is thinking

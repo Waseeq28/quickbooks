@@ -1,9 +1,9 @@
-import { openai } from '@ai-sdk/openai';
-import { streamText, tool } from 'ai';
-import { z } from 'zod';
-import { getQuickBooksServiceForTeam } from '@/lib/quickbooks/service';
-import { requirePermission } from '@/utils/authz-server';
-import { toSimpleInvoices, toSimpleInvoice } from '@/lib/quickbooks/invoices';
+import { openai } from "@ai-sdk/openai";
+import { streamText, tool } from "ai";
+import { z } from "zod";
+import { getQuickBooksServiceForTeam } from "@/services/quickbooks";
+import { requirePermission } from "@/utils/authz-server";
+import { toSimpleInvoices, toSimpleInvoice } from "@/lib/invoice-transformers";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -11,74 +11,77 @@ export const maxDuration = 30;
 // Define invoice tools using the AI SDK tool helper
 const invoiceTools = {
   fetchAllInvoices: tool({
-    description: 'Fetch all invoices from QuickBooks Online. Use this when the user asks to retrieve, get, fetch, or see all invoices.',
+    description:
+      "Fetch all invoices from QuickBooks Online. Use this when the user asks to retrieve, get, fetch, or see all invoices.",
     parameters: z.object({}), // No parameters needed for fetching all invoices
     execute: async () => {
       try {
-        const { teamId } = await requirePermission('invoice:read');
+        const { teamId } = await requirePermission("invoice:read");
         const service = await getQuickBooksServiceForTeam(teamId);
         const rawInvoices = await service.listInvoices();
         const simplifiedInvoices = toSimpleInvoices(rawInvoices);
-        
+
         return {
           success: true,
           message: `Retrieved ${simplifiedInvoices.length} invoices.`,
           invoices: simplifiedInvoices,
-          count: simplifiedInvoices.length
+          count: simplifiedInvoices.length,
         };
       } catch (error: any) {
         return {
           success: false,
-          error: 'Failed to fetch invoices from QuickBooks',
-          message: 'Unable to retrieve invoices. Please try again.'
+          error: "Failed to fetch invoices from QuickBooks",
+          message: "Unable to retrieve invoices. Please try again.",
         };
       }
     },
   }),
 
   getInvoice: tool({
-    description: 'Get details of a specific invoice by ID from QuickBooks Online. Use this when the user asks for details about a specific invoice.',
+    description:
+      "Get details of a specific invoice by ID from QuickBooks Online. Use this when the user asks for details about a specific invoice.",
     parameters: z.object({
-      invoiceId: z.string().describe('The exact ID of the invoice to retrieve'),
+      invoiceId: z.string().describe("The exact ID of the invoice to retrieve"),
     }),
     execute: async ({ invoiceId }) => {
       try {
-        const { teamId } = await requirePermission('invoice:read');
+        const { teamId } = await requirePermission("invoice:read");
         const service = await getQuickBooksServiceForTeam(teamId);
         const rawInvoice = await service.getInvoice(invoiceId);
-        
+
         if (!rawInvoice) {
           return {
             success: false,
-            error: 'Invoice not found',
-            message: `Invoice "${invoiceId}" not found.`
+            error: "Invoice not found",
+            message: `Invoice "${invoiceId}" not found.`,
           };
         }
 
         return {
           success: true,
           message: `Invoice ${invoiceId} retrieved.`,
-          invoice: rawInvoice
+          invoice: rawInvoice,
         };
       } catch (error: any) {
         return {
           success: false,
-          error: 'Failed to fetch invoice from QuickBooks',
-          message: `Could not retrieve invoice "${invoiceId}".`
+          error: "Failed to fetch invoice from QuickBooks",
+          message: `Could not retrieve invoice "${invoiceId}".`,
         };
       }
     },
   }),
 
   getCustomers: tool({
-    description: 'Get all customers from QuickBooks Online. Use this when the user wants to create an invoice and needs to see available customers.',
+    description:
+      "Get all customers from QuickBooks Online. Use this when the user wants to create an invoice and needs to see available customers.",
     parameters: z.object({}),
     execute: async () => {
       try {
-        const { teamId } = await requirePermission('invoice:read');
+        const { teamId } = await requirePermission("invoice:read");
         const service = await getQuickBooksServiceForTeam(teamId);
         const customers = await service.listCustomers();
-        
+
         return {
           success: true,
           message: `Retrieved ${customers.length} customers.`,
@@ -86,45 +89,66 @@ const invoiceTools = {
             id: customer.Id,
             name: customer.Name,
             companyName: customer.CompanyName,
-            email: customer.PrimaryEmailAddr?.Address
+            email: customer.PrimaryEmailAddr?.Address,
           })),
-          count: customers.length
+          count: customers.length,
         };
       } catch (error: any) {
         return {
           success: false,
-          error: 'Failed to fetch customers from QuickBooks',
-          message: 'Unable to retrieve customers. Please try again.'
+          error: "Failed to fetch customers from QuickBooks",
+          message: "Unable to retrieve customers. Please try again.",
         };
       }
     },
   }),
 
   createInvoice: tool({
-    description: 'Create a new invoice in QuickBooks Online. Use this when the user wants to create a new invoice with specific customer and line item details.',
+    description:
+      "Create a new invoice in QuickBooks Online. Use this when the user wants to create a new invoice with specific customer and line item details.",
     parameters: z.object({
-      customerId: z.string().describe('The ID of the customer for this invoice'),
-      customerName: z.string().describe('The name of the customer for reference'),
-      lineItems: z.array(z.object({
-        itemName: z.string().describe('Name of the item or service being sold'),
-        quantity: z.number().describe('Quantity of the item'),
-        unitPrice: z.number().describe('Price per unit'),
-        amount: z.number().describe('Total amount for this line item (quantity * unitPrice)')
-      })).describe('Array of line items for the invoice'),
-      dueDate: z.string().optional().describe('Due date for the invoice in YYYY-MM-DD format')
+      customerId: z
+        .string()
+        .describe("The ID of the customer for this invoice"),
+      customerName: z
+        .string()
+        .describe("The name of the customer for reference"),
+      lineItems: z
+        .array(
+          z.object({
+            itemName: z
+              .string()
+              .describe("Name of the item or service being sold"),
+            quantity: z.number().describe("Quantity of the item"),
+            unitPrice: z.number().describe("Price per unit"),
+            amount: z
+              .number()
+              .describe(
+                "Total amount for this line item (quantity * unitPrice)",
+              ),
+          }),
+        )
+        .describe("Array of line items for the invoice"),
+      dueDate: z
+        .string()
+        .optional()
+        .describe("Due date for the invoice in YYYY-MM-DD format"),
     }),
     execute: async ({ customerId, customerName, lineItems, dueDate }) => {
       try {
         // Calculate total amount
-        const totalAmount = lineItems.reduce((sum, item) => sum + item.amount, 0);
-        
+        const totalAmount = lineItems.reduce(
+          (sum, item) => sum + item.amount,
+          0,
+        );
+
         // Format current date
-        const currentDate = new Date().toISOString().split('T')[0];
-        
+        const currentDate = new Date().toISOString().split("T")[0];
+
         // Build QuickBooks invoice object - only include what user specified
         const invoiceData = {
           CustomerRef: {
-            value: customerId
+            value: customerId,
           },
           // Only set DueDate if explicitly provided by user
           ...(dueDate && { DueDate: dueDate }),
@@ -134,61 +158,85 @@ const invoiceTools = {
             Description: item.itemName, // Only field user specified for the item
             SalesItemLineDetail: {
               Qty: item.quantity,
-              UnitPrice: item.unitPrice
+              UnitPrice: item.unitPrice,
               // Removed hardcoded ItemRef - let QuickBooks handle defaults
-            }
-          }))
+            },
+          })),
         };
 
-        const { teamId } = await requirePermission('invoice:read');
+        const { teamId } = await requirePermission("invoice:read");
         const service = await getQuickBooksServiceForTeam(teamId);
         const createdInvoice = await service.createInvoice(invoiceData);
-        
+
         return {
           success: true,
-          message: `Invoice created successfully for ${customerName}. Total amount: $${totalAmount.toFixed(2)}${dueDate ? `, due ${dueDate}` : ', no due date set'}.`,
+          message: `Invoice created successfully for ${customerName}. Total amount: $${totalAmount.toFixed(2)}${dueDate ? `, due ${dueDate}` : ", no due date set"}.`,
           invoice: createdInvoice,
           invoiceId: (createdInvoice as any)?.Id,
-          totalAmount: totalAmount
+          totalAmount: totalAmount,
         };
       } catch (error: any) {
         return {
           success: false,
-          error: 'Failed to create invoice in QuickBooks',
-          message: `Could not create invoice for ${customerName}. Error: ${error.message}`
+          error: "Failed to create invoice in QuickBooks",
+          message: `Could not create invoice for ${customerName}. Error: ${error.message}`,
         };
       }
     },
   }),
 
   updateInvoice: tool({
-    description: 'Update an existing invoice in QuickBooks Online. Use this when the user wants to modify an existing invoice. Requires the invoice ID and sync token from the current invoice data.',
+    description:
+      "Update an existing invoice in QuickBooks Online. Use this when the user wants to modify an existing invoice. Requires the invoice ID and sync token from the current invoice data.",
     parameters: z.object({
-      invoiceId: z.string().describe('The ID of the invoice to update'),
-      syncToken: z.string().describe('The current sync token of the invoice (required for QuickBooks versioning)'),
-      updates: z.object({
-        dueDate: z.string().optional().describe('New due date for the invoice in YYYY-MM-DD format'),
-        lineItems: z.array(z.object({
-          itemName: z.string().describe('Name of the item or service being sold'),
-          quantity: z.number().describe('Quantity of the item'),
-          unitPrice: z.number().describe('Price per unit'),
-          amount: z.number().describe('Total amount for this line item (quantity * unitPrice)')
-        })).optional().describe('Updated array of line items for the invoice'),
-        customerId: z.string().optional().describe('New customer ID if changing the customer')
-      }).describe('Object containing the fields to update')
+      invoiceId: z.string().describe("The ID of the invoice to update"),
+      syncToken: z
+        .string()
+        .describe(
+          "The current sync token of the invoice (required for QuickBooks versioning)",
+        ),
+      updates: z
+        .object({
+          dueDate: z
+            .string()
+            .optional()
+            .describe("New due date for the invoice in YYYY-MM-DD format"),
+          lineItems: z
+            .array(
+              z.object({
+                itemName: z
+                  .string()
+                  .describe("Name of the item or service being sold"),
+                quantity: z.number().describe("Quantity of the item"),
+                unitPrice: z.number().describe("Price per unit"),
+                amount: z
+                  .number()
+                  .describe(
+                    "Total amount for this line item (quantity * unitPrice)",
+                  ),
+              }),
+            )
+            .optional()
+            .describe("Updated array of line items for the invoice"),
+          customerId: z
+            .string()
+            .optional()
+            .describe("New customer ID if changing the customer"),
+        })
+        .describe("Object containing the fields to update"),
     }),
     execute: async ({ invoiceId, syncToken, updates }) => {
       try {
         // First get the current invoice to preserve existing data
-        const { teamId } = await requirePermission('invoice:read');
+        const { teamId } = await requirePermission("invoice:read");
         const service = await getQuickBooksServiceForTeam(teamId);
         const currentInvoice: any = await service.getInvoice(invoiceId);
-        
+
         if (!currentInvoice) {
           return {
             success: false,
-            error: 'Invoice not found',
-            message: `Invoice "${invoiceId}" not found.`
+            error: "Invoice not found",
+            message: `Invoice "${invoiceId}" not found.`,
           };
         }
 
@@ -196,7 +244,7 @@ const invoiceTools = {
         const updatedInvoice: any = {
           ...currentInvoice,
           Id: invoiceId,
-          SyncToken: syncToken
+          SyncToken: syncToken,
         };
 
         // Apply updates
@@ -206,7 +254,7 @@ const invoiceTools = {
 
         if (updates.customerId) {
           updatedInvoice.CustomerRef = {
-            value: updates.customerId
+            value: updates.customerId,
           };
         }
 
@@ -217,101 +265,116 @@ const invoiceTools = {
             Description: item.itemName,
             SalesItemLineDetail: {
               Qty: item.quantity,
-              UnitPrice: item.unitPrice
-            }
+              UnitPrice: item.unitPrice,
+            },
           }));
         }
 
         const result = await service.updateInvoice(updatedInvoice);
-        
+
         return {
           success: true,
           message: `Invoice ${invoiceId} updated successfully.`,
           invoice: result,
-          invoiceId: result?.Id
+          invoiceId: result?.Id,
         };
       } catch (error: any) {
         return {
           success: false,
-          error: 'Failed to update invoice in QuickBooks',
-          message: `Could not update invoice "${invoiceId}". Error: ${error.message}`
+          error: "Failed to update invoice in QuickBooks",
+          message: `Could not update invoice "${invoiceId}". Error: ${error.message}`,
         };
       }
     },
   }),
 
   deleteInvoice: tool({
-    description: 'Delete (void) an invoice in QuickBooks Online. Use this when the user wants to permanently remove or void an invoice. Requires the invoice ID and sync token.',
+    description:
+      "Delete (void) an invoice in QuickBooks Online. Use this when the user wants to permanently remove or void an invoice. Requires the invoice ID and sync token.",
     parameters: z.object({
-      invoiceId: z.string().describe('The ID of the invoice to delete'),
-      syncToken: z.string().describe('The current sync token of the invoice (required for QuickBooks versioning)'),
-      invoiceReference: z.string().optional().describe('Invoice reference or number for confirmation')
+      invoiceId: z.string().describe("The ID of the invoice to delete"),
+      syncToken: z
+        .string()
+        .describe(
+          "The current sync token of the invoice (required for QuickBooks versioning)",
+        ),
+      invoiceReference: z
+        .string()
+        .optional()
+        .describe("Invoice reference or number for confirmation"),
     }),
     execute: async ({ invoiceId, syncToken, invoiceReference }) => {
       try {
-        const { teamId } = await requirePermission('invoice:read');
+        const { teamId } = await requirePermission("invoice:read");
         const service = await getQuickBooksServiceForTeam(teamId);
         const result = await service.deleteInvoice(invoiceId, syncToken);
-        
+
         return {
           success: true,
           message: `Invoice ${invoiceReference || invoiceId} has been deleted successfully.`,
-          deletedInvoiceId: invoiceId
+          deletedInvoiceId: invoiceId,
         };
       } catch (error: any) {
         return {
           success: false,
-          error: 'Failed to delete invoice in QuickBooks',
-          message: `Could not delete invoice "${invoiceReference || invoiceId}". Error: ${error.message}`
+          error: "Failed to delete invoice in QuickBooks",
+          message: `Could not delete invoice "${invoiceReference || invoiceId}". Error: ${error.message}`,
         };
       }
     },
   }),
 
   sendInvoicePdf: tool({
-    description: 'Send the PDF of a specific invoice to a recipient via email. Use this when the user wants to email an invoice.',
+    description:
+      "Send the PDF of a specific invoice to a recipient via email. Use this when the user wants to email an invoice.",
     parameters: z.object({
-      invoiceId: z.string().describe('The ID of the invoice to send'),
-      email: z.string().email().describe('The email address of the recipient'),
+      invoiceId: z.string().describe("The ID of the invoice to send"),
+      email: z.string().email().describe("The email address of the recipient"),
     }),
     execute: async ({ invoiceId, email }) => {
       try {
-        const { teamId } = await requirePermission('invoice:read');
+        const { teamId } = await requirePermission("invoice:read");
         const service = await getQuickBooksServiceForTeam(teamId);
         await service.sendInvoicePdf(invoiceId, email);
         return {
           success: true,
           message: `Invoice ${invoiceId} has been sent to ${email}.`,
           invoiceId: invoiceId,
-          email: email
+          email: email,
         };
       } catch (error: any) {
         return {
           success: false,
-          error: 'Failed to send invoice PDF',
-          message: `Could not send invoice ${invoiceId} to ${email}. Error: ${error.message}`
+          error: "Failed to send invoice PDF",
+          message: `Could not send invoice ${invoiceId} to ${email}. Error: ${error.message}`,
         };
       }
     },
   }),
 
   downloadInvoicePdf: tool({
-    description: 'Download PDF version of an invoice from QuickBooks Online. Use this when the user wants to download or get a PDF copy of a specific invoice.',
+    description:
+      "Download PDF version of an invoice from QuickBooks Online. Use this when the user wants to download or get a PDF copy of a specific invoice.",
     parameters: z.object({
-      invoiceId: z.string().describe('The ID of the invoice to download as PDF'),
-      invoiceReference: z.string().optional().describe('Invoice reference or number for user confirmation')
+      invoiceId: z
+        .string()
+        .describe("The ID of the invoice to download as PDF"),
+      invoiceReference: z
+        .string()
+        .optional()
+        .describe("Invoice reference or number for user confirmation"),
     }),
     execute: async ({ invoiceId, invoiceReference }) => {
       try {
         // Verify the invoice exists first
         const service = await getQuickBooksService();
         const invoice = await service.getInvoice(invoiceId);
-        
+
         if (!invoice) {
           return {
             success: false,
-            error: 'Invoice not found',
-            message: `Invoice "${invoiceReference || invoiceId}" not found.`
+            error: "Invoice not found",
+            message: `Invoice "${invoiceReference || invoiceId}" not found.`,
           };
         }
 
@@ -320,13 +383,13 @@ const invoiceTools = {
           message: `The PDF download has been initiated for invoice ${invoiceReference || invoiceId}.`,
           downloadUrl: `/api/quickbooks/invoices/${invoiceId}/pdf`,
           invoiceId: invoiceId,
-          action: 'download_pdf'
+          action: "download_pdf",
         };
       } catch (error: any) {
         return {
           success: false,
-          error: 'Failed to initiate PDF download',
-          message: `Could not download PDF for invoice "${invoiceReference || invoiceId}". Error: ${error.message}`
+          error: "Failed to initiate PDF download",
+          message: `Could not download PDF for invoice "${invoiceReference || invoiceId}". Error: ${error.message}`,
         };
       }
     },
@@ -337,7 +400,7 @@ export async function POST(req: Request) {
   const { messages } = await req.json();
 
   const result = streamText({
-    model: openai('gpt-4o-mini'),
+    model: openai("gpt-4o-mini"),
     messages,
     tools: invoiceTools,
     maxSteps: 3, // Reduced from 5 for development
@@ -382,4 +445,4 @@ Keep all responses brief and to the point.`,
   });
 
   return result.toDataStreamResponse();
-} 
+}

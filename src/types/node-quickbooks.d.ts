@@ -1,1 +1,1 @@
-declare module 'node-quickbooks'; 
+declare module "node-quickbooks";

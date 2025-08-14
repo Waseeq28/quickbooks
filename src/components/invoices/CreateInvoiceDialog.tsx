@@ -15,7 +15,7 @@ import { Plus, X, CalendarIcon } from "lucide-react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { createInvoice } from "@/lib/api/invoices-client";
+import { createInvoice } from "@/services/invoices-client";
 import { cn } from "@/lib/utils";
 
 interface InvoiceItem {
@@ -78,7 +78,7 @@ export function CreateInvoiceDialog({
   const updateItem = (
     index: number,
     field: keyof InvoiceItem,
-    value: string | number
+    value: string | number,
   ) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
@@ -106,7 +106,7 @@ export function CreateInvoiceDialog({
 
     if (items.some((item) => !item.description.trim() || item.rate <= 0)) {
       toast.error(
-        "Please fill in all item details and ensure rates are greater than 0"
+        "Please fill in all item details and ensure rates are greater than 0",
       );
       return;
     }
@@ -129,7 +129,7 @@ export function CreateInvoiceDialog({
 
       if (!data.success) {
         throw new Error(
-          data?.details || data?.error || "Failed to create invoice"
+          data?.details || data?.error || "Failed to create invoice",
         );
       }
 
@@ -211,7 +211,7 @@ export function CreateInvoiceDialog({
                     variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal bg-background border-border/30 hover:border-border/50",
-                      !issueDate && "text-muted-foreground"
+                      !issueDate && "text-muted-foreground",
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
@@ -249,7 +249,7 @@ export function CreateInvoiceDialog({
                     variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal bg-background border-border/30 hover:border-border/50",
-                      !dueDate && "text-muted-foreground"
+                      !dueDate && "text-muted-foreground",
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
@@ -384,7 +384,7 @@ export function CreateInvoiceDialog({
                             updateItem(
                               index,
                               "quantity",
-                              Number(e.target.value)
+                              Number(e.target.value),
                             )
                           }
                           className="text-sm"
@@ -452,7 +452,7 @@ export function CreateInvoiceDialog({
               Cancel
             </Button>
             <Button
-            variant="outline"
+              variant="outline"
               onClick={handleCreateInvoice}
               disabled={
                 isLoading ||

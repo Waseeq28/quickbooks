@@ -21,7 +21,12 @@ interface InviteMemberDialogProps {
   onMemberInvited?: () => void;
 }
 
-export function InviteMemberDialog({ open, onOpenChange, teamName, onMemberInvited }: InviteMemberDialogProps) {
+export function InviteMemberDialog({
+  open,
+  onOpenChange,
+  teamName,
+  onMemberInvited,
+}: InviteMemberDialogProps) {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("Viewer");
   const [isSendingInvite, setIsSendingInvite] = useState(false);
@@ -32,21 +37,21 @@ export function InviteMemberDialog({ open, onOpenChange, teamName, onMemberInvit
       return;
     }
 
-    if (!inviteEmail.includes('@')) {
+    if (!inviteEmail.includes("@")) {
       toast.error("Please enter a valid email address");
       return;
     }
 
     setIsSendingInvite(true);
-    
+
     try {
       // Mock invite sending - in real app this would send an email
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
+
       toast.success("Invitation sent successfully!", {
         description: `Invitation sent to ${inviteEmail} with ${inviteRole} role`,
       });
-      
+
       setInviteEmail("");
       setInviteRole("Viewer");
       onOpenChange(false);
@@ -56,7 +61,7 @@ export function InviteMemberDialog({ open, onOpenChange, teamName, onMemberInvit
         description: "An unexpected error occurred",
       });
     }
-    
+
     setIsSendingInvite(false);
   };
 
@@ -90,13 +95,13 @@ export function InviteMemberDialog({ open, onOpenChange, teamName, onMemberInvit
               onChange={(e) => setInviteEmail(e.target.value)}
               placeholder="Enter email address"
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !isSendingInvite) {
+                if (e.key === "Enter" && !isSendingInvite) {
                   handleSendInvite();
                 }
               }}
             />
           </div>
-          
+
           <div>
             <Label htmlFor="inviteRole">Role</Label>
             <select
@@ -110,7 +115,7 @@ export function InviteMemberDialog({ open, onOpenChange, teamName, onMemberInvit
               <option value="Admin">Admin</option>
             </select>
           </div>
-          
+
           <div className="flex gap-2 pt-2">
             <Button
               variant="outline"

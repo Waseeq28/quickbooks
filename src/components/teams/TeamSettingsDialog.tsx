@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,6 +21,7 @@ import {
   Trash2,
   ExternalLink,
   PlugZap,
+  Check,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
@@ -32,11 +33,10 @@ import {
   updateOwnTeamRole,
   removeTeamMember,
   updateTeamMemberRole,
-} from "@/lib/teams";
-import { useAuthz } from "@/components/AuthzProvider";
+} from "@/services/teams";
+import { useAuthz } from "@/components/providers/AuthzProvider";
 import { toTitleCaseRole, type TeamRole } from "@/lib/authz";
-import { useEffect } from "react";
-import { InviteMemberDialog } from "@/components/InviteMemberDialog";
+import { InviteMemberDialog } from "./InviteMemberDialog";
 
 interface TeamMember {
   id: string;
@@ -110,7 +110,7 @@ export function TeamSettingsDialog({
         members.map((m) => ({
           ...m,
           role: toTitleCaseRole(m.role as TeamRole),
-        }))
+        })),
       );
 
       // Reset form defaults
@@ -137,13 +137,19 @@ export function TeamSettingsDialog({
   // Load QuickBooks connection for current team
   useEffect(() => {
     const loadConn = async () => {
-      if (!currentTeamId) { setIsQbConnected(false); return; }
+      if (!currentTeamId) {
+        setIsQbConnected(false);
+        return;
+      }
       const { data, error } = await supabase
-        .from('quickbooks_connections')
-        .select('realm_id, expires_at')
-        .eq('team_id', currentTeamId)
+        .from("quickbooks_connections")
+        .select("realm_id, expires_at")
+        .eq("team_id", currentTeamId)
         .single();
-      if (error) { setIsQbConnected(false); return; }
+      if (error) {
+        setIsQbConnected(false);
+        return;
+      }
       setIsQbConnected(!!data);
     };
     loadConn();
@@ -152,7 +158,7 @@ export function TeamSettingsDialog({
   // Initialize form fields with current team data
   const [teamName, setTeamName] = useState(currentTeamName);
   const [userRole, setUserRole] = useState<string>(
-    toTitleCaseRole(currentTeamRole as TeamRole)
+    toTitleCaseRole(currentTeamRole as TeamRole),
   );
 
   const handleSave = async () => {
@@ -170,7 +176,7 @@ export function TeamSettingsDialog({
       const trimmedName = teamName.trim();
       if (isAdmin && trimmedName && trimmedName !== currentTeamName) {
         updates.push(async () =>
-          updateTeamName(supabase, currentTeamId, trimmedName)
+          updateTeamName(supabase, currentTeamId, trimmedName),
         );
       }
 
@@ -181,7 +187,7 @@ export function TeamSettingsDialog({
         | "viewer";
       if (isAdmin && desiredRoleLower !== currentTeamRole) {
         updates.push(async () =>
-          updateOwnTeamRole(supabase, currentTeamId, user.id, desiredRoleLower)
+          updateOwnTeamRole(supabase, currentTeamId, user.id, desiredRoleLower),
         );
       }
 
@@ -304,7 +310,7 @@ export function TeamSettingsDialog({
             </div>
 
             {/* QuickBooks Connection (admin only) */}
-            {can('team:update') && (
+            {can("team:update") && (
               <div className="space-y-3">
                 <Label className="flex items-center gap-2">
                   <PlugZap className="h-4 w-4" />
@@ -320,12 +326,15 @@ export function TeamSettingsDialog({
                       variant="destructive"
                       size="sm"
                       onClick={() =>
-                        fetch('/api/quickbooks/disconnect', { method: 'DELETE' })
-                          .then(() => {
-                            toast.success('Disconnected QuickBooks for this team');
-                            setIsQbConnected(false);
-                            onTeamUpdate?.();
-                          })
+                        fetch("/api/quickbooks/disconnect", {
+                          method: "DELETE",
+                        }).then(() => {
+                          toast.success(
+                            "Disconnected QuickBooks for this team",
+                          );
+                          setIsQbConnected(false);
+                          onTeamUpdate?.();
+                        })
                       }
                     >
                       Disconnect
@@ -334,7 +343,12 @@ export function TeamSettingsDialog({
                 ) : (
                   <div className="ml-2">
                     <form action="/api/quickbooks/connect" method="get">
-                      <Button type="submit" variant="outline" size="sm" className="gap-2 bg-background">
+                      <Button
+                        type="submit"
+                        variant="outline"
+                        size="sm"
+                        className="gap-2 bg-background"
+                      >
                         <ExternalLink className="h-4 w-4" />
                         Connect
                       </Button>
@@ -410,7 +424,7 @@ export function TeamSettingsDialog({
                               supabase,
                               currentTeamId,
                               member.id,
-                              newRole
+                              newRole,
                             );
                             if (error) {
                               toast.error("Failed to update role", {
@@ -421,7 +435,7 @@ export function TeamSettingsDialog({
                             const updated = teamMembers.map((m) =>
                               m.id === member.id
                                 ? { ...m, role: newRoleTitle }
-                                : m
+                                : m,
                             );
                             setTeamMembers(updated);
                             toast.success("Member role updated");
@@ -437,10 +451,10 @@ export function TeamSettingsDialog({
                             member.role === "Admin"
                               ? "bg-primary/10 text-primary"
                               : currentUserId && member.id === currentUserId
-                              ? "bg-green-500/10 text-green-400"
-                              : member.role === "Accountant"
-                              ? "bg-emerald-500/10 text-emerald-500"
-                              : "bg-slate-500/10 text-slate-500"
+                                ? "bg-green-500/10 text-green-400"
+                                : member.role === "Accountant"
+                                  ? "bg-emerald-500/10 text-emerald-500"
+                                  : "bg-slate-500/10 text-slate-500"
                           }`}
                         >
                           {member.role}
@@ -455,7 +469,7 @@ export function TeamSettingsDialog({
                             const { error } = await removeTeamMember(
                               supabase,
                               currentTeamId,
-                              member.id
+                              member.id,
                             );
                             if (error) {
                               toast.error("Failed to remove member", {
@@ -464,7 +478,7 @@ export function TeamSettingsDialog({
                             } else {
                               toast.success("Member removed");
                               const updated = teamMembers.filter(
-                                (m) => m.id !== member.id
+                                (m) => m.id !== member.id,
                               );
                               setTeamMembers(updated);
                             }
@@ -508,7 +522,6 @@ export function TeamSettingsDialog({
         onOpenChange={setShowInviteDialog}
         teamName={currentTeamName}
         onMemberInvited={() => {
-          // Optionally refresh team members or show success message
           toast.success("Team member invited successfully!");
         }}
       />

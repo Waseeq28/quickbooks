@@ -1,25 +1,25 @@
-"use client"
+"use client";
 
-import { Card, CardContent } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Hash, AlertTriangle, FileText } from "lucide-react"
-import { SimpleInvoice } from "@/types/quickbooks"
-import { getStatusConfig } from "@/utils/invoice-status"
+import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Hash, AlertTriangle, FileText } from "lucide-react";
+import { SimpleInvoice } from "@/types/quickbooks";
+import { getStatusConfig } from "@/utils/invoice-status";
 
 interface InvoiceListProps {
-  invoices: SimpleInvoice[]
-  selectedInvoice: SimpleInvoice | null
-  onInvoiceSelect: (invoice: SimpleInvoice) => void
-  isLoading: boolean
-  error: string | null
+  invoices: SimpleInvoice[];
+  selectedInvoice: SimpleInvoice | null;
+  onInvoiceSelect: (invoice: SimpleInvoice) => void;
+  isLoading: boolean;
+  error: string | null;
 }
 
-export function InvoiceList({ 
-  invoices, 
-  selectedInvoice, 
-  onInvoiceSelect, 
-  isLoading, 
-  error 
+export function InvoiceList({
+  invoices,
+  selectedInvoice,
+  onInvoiceSelect,
+  isLoading,
+  error,
 }: InvoiceListProps) {
   if (isLoading) {
     return (
@@ -28,10 +28,12 @@ export function InvoiceList({
           <div className="relative">
             <div className="w-10 h-10 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
           </div>
-          <span className="text-sm font-medium text-muted-foreground">Loading...</span>
+          <span className="text-sm font-medium text-muted-foreground">
+            Loading...
+          </span>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -44,13 +46,15 @@ export function InvoiceList({
               <span>{error}</span>
             </div>
           )}
-          
+
           {!error && invoices.length === 0 && (
             <div className="text-center py-8">
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted/20 mb-3">
                 <FileText className="h-6 w-6 text-muted-foreground" />
               </div>
-              <h3 className="font-semibold text-muted-foreground text-sm">No Invoices Found</h3>
+              <h3 className="font-semibold text-muted-foreground text-sm">
+                No Invoices Found
+              </h3>
               <p className="text-xs text-muted-foreground/70 mt-1 max-w-[180px] mx-auto">
                 Click refresh to fetch invoices
               </p>
@@ -58,15 +62,15 @@ export function InvoiceList({
           )}
 
           {invoices.map((invoice) => {
-            const statusConfig = getStatusConfig(invoice.status)
-            const isSelected = selectedInvoice?.id === invoice.id
+            const statusConfig = getStatusConfig(invoice.status);
+            const isSelected = selectedInvoice?.id === invoice.id;
 
             return (
               <Card
                 key={invoice.id}
                 className={`cursor-pointer transition-all duration-200 hover:shadow-lg border border-border/30 ${
-                  isSelected 
-                    ? "ring-2 ring-primary/50 shadow-lg bg-primary/10" 
+                  isSelected
+                    ? "ring-2 ring-primary/50 shadow-lg bg-primary/10"
                     : "hover:bg-card/50 bg-card/30"
                 }`}
                 onClick={() => onInvoiceSelect(invoice)}
@@ -75,12 +79,16 @@ export function InvoiceList({
                   <div className="flex items-start justify-between mb-1.5">
                     <div className="flex items-center gap-1.5">
                       <Hash className="h-3 w-3 text-muted-foreground" />
-                      <span className="font-semibold text-sm text-foreground">{invoice.id}</span>
+                      <span className="font-semibold text-sm text-foreground">
+                        {invoice.id}
+                      </span>
                     </div>
-                    <span 
+                    <span
                       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium ${statusConfig.bgColor} ${statusConfig.textColor} border border-white/10`}
                     >
-                      <statusConfig.icon className={`h-3 w-3 ${statusConfig.iconColor}`} />
+                      <statusConfig.icon
+                        className={`h-3 w-3 ${statusConfig.iconColor}`}
+                      />
                       {statusConfig.label}
                     </span>
                   </div>
@@ -97,10 +105,10 @@ export function InvoiceList({
                   </div>
                 </CardContent>
               </Card>
-            )
+            );
           })}
         </div>
       </ScrollArea>
     </div>
-  )
+  );
 }

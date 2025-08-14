@@ -21,7 +21,7 @@
   --input: #27272a;
   --ring: #3b82f6;
   --radius: 0.75rem;
-  
+
   /* Modern dark theme specific colors */
   --surface: #1f1f23;
   --surface-hover: #2a2a2e;
@@ -59,8 +59,10 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans, 'Inter', system-ui, sans-serif);
-  font-feature-settings: "rlig" 1, "calt" 1;
+  font-family: var(--font-sans, "Inter", system-ui, sans-serif);
+  font-feature-settings:
+    "rlig" 1,
+    "calt" 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -92,7 +94,11 @@ body {
 
 /* Smooth transitions for better UX */
 * {
-  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease, color 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease;
 }
 
 /* Focus styles */
@@ -110,25 +116,31 @@ body {
 }
 
 .gradient-border {
-  background: linear-gradient(var(--background), var(--background)) padding-box,
-              linear-gradient(135deg, var(--primary), var(--purple)) border-box;
+  background:
+    linear-gradient(var(--background), var(--background)) padding-box,
+    linear-gradient(135deg, var(--primary), var(--purple)) border-box;
   border: 1px solid transparent;
 }
 
 /* Animation utilities */
 @keyframes glow {
-  0%, 100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }
-  50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); }
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+  }
 }
 
 @keyframes slideUp {
-  from { 
-    opacity: 0; 
-    transform: translateY(10px); 
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
-  to { 
-    opacity: 1; 
-    transform: translateY(0); 
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -142,23 +154,31 @@ body {
 
 /* Radix Collapsible smooth height animations */
 @keyframes collapsibleDown {
-  from { height: 0; }
-  to { height: var(--radix-collapsible-content-height); }
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-collapsible-content-height);
+  }
 }
 
 @keyframes collapsibleUp {
-  from { height: var(--radix-collapsible-content-height); }
-  to { height: 0; }
+  from {
+    height: var(--radix-collapsible-content-height);
+  }
+  to {
+    height: 0;
+  }
 }
 
 .collapsible-content {
   overflow: hidden;
 }
 
-.collapsible-content[data-state='open'] {
+.collapsible-content[data-state="open"] {
   animation: collapsibleDown 200ms ease-out;
 }
 
-.collapsible-content[data-state='closed'] {
+.collapsible-content[data-state="closed"] {
   animation: collapsibleUp 200ms ease-in;
 }

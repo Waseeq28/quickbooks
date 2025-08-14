@@ -21,7 +21,11 @@ interface CreateTeamDialogProps {
   onTeamCreated?: () => void;
 }
 
-export function CreateTeamDialog({ open, onOpenChange, onTeamCreated }: CreateTeamDialogProps) {
+export function CreateTeamDialog({
+  open,
+  onOpenChange,
+  onTeamCreated,
+}: CreateTeamDialogProps) {
   const [teamName, setTeamName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const supabase = createClient();
@@ -33,15 +37,19 @@ export function CreateTeamDialog({ open, onOpenChange, onTeamCreated }: CreateTe
     }
 
     setIsLoading(true);
-    
+
     try {
-      const { data: newTeamId, error } = await supabase.rpc('create_team', { team_name: teamName.trim() });
+      const { data: newTeamId, error } = await supabase.rpc("create_team", {
+        team_name: teamName.trim(),
+      });
       if (error) {
         toast.error("Failed to create team", { description: error.message });
       } else {
         // Notify any global listeners (mirrors previous mock event)
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('teamCreated', { detail: { teamId: newTeamId } }));
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("teamCreated", { detail: { teamId: newTeamId } }),
+          );
         }
         toast.success("Team created successfully!");
         setTeamName("");
@@ -53,7 +61,7 @@ export function CreateTeamDialog({ open, onOpenChange, onTeamCreated }: CreateTe
         description: error?.message ?? "An unexpected error occurred",
       });
     }
-    
+
     setIsLoading(false);
   };
 
@@ -88,7 +96,7 @@ export function CreateTeamDialog({ open, onOpenChange, onTeamCreated }: CreateTe
               placeholder="Enter team name"
               className="flex-1"
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !isLoading) {
+                if (e.key === "Enter" && !isLoading) {
                   handleCreateTeam();
                 }
               }}

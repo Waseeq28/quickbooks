@@ -1,83 +1,98 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Mail, Download, RefreshCw, Check, AlertTriangle, Trash2 } from "lucide-react"
-import { deleteInvoice } from "@/lib/api/invoices-client"
-import { PermissionGate } from "@/components/AuthzProvider"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Mail,
+  Download,
+  RefreshCw,
+  Check,
+  AlertTriangle,
+  Trash2,
+} from "lucide-react";
+import { deleteInvoice } from "@/services/invoices-client";
+import { PermissionGate } from "@/components/providers/AuthzProvider";
 
 interface InvoiceActionsProps {
-  invoiceId: string
-  onDownloadPdf: (invoiceId: string) => Promise<void>
+  invoiceId: string;
+  onDownloadPdf: (invoiceId: string) => Promise<void>;
 }
 
-export function InvoiceActions({ invoiceId, onDownloadPdf }: InvoiceActionsProps) {
-  const [emailToSend, setEmailToSend] = useState("")
-  const [isSendingEmail, setIsSendingEmail] = useState(false)
-  const [sendEmailError, setSendEmailError] = useState<string | null>(null)
-  const [sendEmailSuccess, setSendEmailSuccess] = useState<string | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
+export function InvoiceActions({
+  invoiceId,
+  onDownloadPdf,
+}: InvoiceActionsProps) {
+  const [emailToSend, setEmailToSend] = useState("");
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [sendEmailError, setSendEmailError] = useState<string | null>(null);
+  const [sendEmailSuccess, setSendEmailSuccess] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const handleSendEmail = async () => {
     if (!emailToSend) {
-      setSendEmailError("Please enter a recipient's email address.")
-      return
+      setSendEmailError("Please enter a recipient's email address.");
+      return;
     }
 
-    setIsSendingEmail(true)
-    setSendEmailError(null)
-    setSendEmailSuccess(null)
+    setIsSendingEmail(true);
+    setSendEmailError(null);
+    setSendEmailSuccess(null);
 
     try {
-      const response = await fetch(`/api/quickbooks/invoices/${invoiceId}/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: emailToSend }),
-      });
+      const response = await fetch(
+        `/api/quickbooks/invoices/${invoiceId}/send`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: emailToSend }),
+        },
+      );
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to send email');
+        throw new Error(result.error || "Failed to send email");
       }
-      
-      setSendEmailSuccess(result.message || "Email sent successfully!")
-      setEmailToSend("")
+
+      setSendEmailSuccess(result.message || "Email sent successfully!");
+      setEmailToSend("");
     } catch (error: any) {
-      setSendEmailError(error.message)
+      setSendEmailError(error.message);
     } finally {
-      setIsSendingEmail(false)
+      setIsSendingEmail(false);
       // Clear messages after a few seconds
       setTimeout(() => {
-        setSendEmailError(null)
-        setSendEmailSuccess(null)
-      }, 5000)
+        setSendEmailError(null);
+        setSendEmailSuccess(null);
+      }, 5000);
     }
-  }
+  };
 
   const handleDelete = async () => {
-    if (isDeleting) return
-    setIsDeleting(true)
-    setDeleteError(null)
+    if (isDeleting) return;
+    setIsDeleting(true);
+    setDeleteError(null);
     try {
-      const result = await deleteInvoice(invoiceId)
+      const result = await deleteInvoice(invoiceId);
       if (!result.success) {
-        throw new Error(result?.details || result?.error || 'Failed to delete invoice')
+        throw new Error(
+          result?.details || result?.error || "Failed to delete invoice",
+        );
       }
       // Soft UX: reload the page or emit a custom event so parent can refresh list
       // For now, trigger a simple reload to reflect deletion
-      if (typeof window !== 'undefined') {
-        window.location.reload()
+      if (typeof window !== "undefined") {
+        window.location.reload();
       }
     } catch (err: any) {
-      setDeleteError(err?.message || 'Failed to delete invoice')
+      setDeleteError(err?.message || "Failed to delete invoice");
     } finally {
-      setIsDeleting(false)
-      setTimeout(() => setDeleteError(null), 5000)
+      setIsDeleting(false);
+      setTimeout(() => setDeleteError(null), 5000);
     }
-  }
+  };
 
   return (
     <div className="pt-2.5 space-y-2.5">
@@ -93,7 +108,7 @@ export function InvoiceActions({ invoiceId, onDownloadPdf }: InvoiceActionsProps
             className="mt-1 bg-input border-border/50 focus:border-primary/50 text-sm h-9"
           />
         </div>
-        
+
         <Button
           onClick={handleSendEmail}
           disabled={isSendingEmail || !emailToSend || !!sendEmailSuccess}
@@ -109,11 +124,11 @@ export function InvoiceActions({ invoiceId, onDownloadPdf }: InvoiceActionsProps
             <Mail className="h-3.5 w-3.5" />
           )}
           <span className="text-sm">
-            {isSendingEmail ? 'Sending' : sendEmailSuccess ? 'Sent!' : 'Send'}
+            {isSendingEmail ? "Sending" : sendEmailSuccess ? "Sent!" : "Send"}
           </span>
         </Button>
 
-        <Button 
+        <Button
           onClick={() => onDownloadPdf(invoiceId)}
           variant="outline"
           className="gap-1.5 h-9 bg-accent"
@@ -123,7 +138,7 @@ export function InvoiceActions({ invoiceId, onDownloadPdf }: InvoiceActionsProps
           <span className="text-sm">PDF</span>
         </Button>
 
-        <PermissionGate action={'invoice:delete'}>
+        <PermissionGate action={"invoice:delete"}>
           <Button
             onClick={handleDelete}
             variant="destructive"
@@ -136,11 +151,13 @@ export function InvoiceActions({ invoiceId, onDownloadPdf }: InvoiceActionsProps
             ) : (
               <Trash2 className="h-3.5 w-3.5" />
             )}
-            <span className="text-sm">{isDeleting ? 'Deleting' : 'Delete'}</span>
+            <span className="text-sm">
+              {isDeleting ? "Deleting" : "Delete"}
+            </span>
           </Button>
         </PermissionGate>
       </div>
-      
+
       <div className="h-4">
         {sendEmailError && (
           <p className="text-xs text-red-400 flex items-center gap-1 pl-1">
@@ -162,5 +179,5 @@ export function InvoiceActions({ invoiceId, onDownloadPdf }: InvoiceActionsProps
         )}
       </div>
     </div>
-  )
+  );
 }

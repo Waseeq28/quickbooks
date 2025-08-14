@@ -1,33 +1,36 @@
-import { 
-  TrendingUp, 
-  DollarSign, 
-  CheckCircle, 
-  Clock, 
+import {
+  TrendingUp,
+  DollarSign,
+  CheckCircle,
+  Clock,
   AlertTriangle,
-  FileText 
-} from "lucide-react"
-import type { SimpleInvoice } from "@/types/quickbooks"
+  FileText,
+} from "lucide-react";
+import type { SimpleInvoice } from "@/types/quickbooks";
 
 export interface StatConfig {
-  title: string
-  value: string
-  icon: React.ComponentType<{ className?: string }>
-  cardBg: string
-  iconBg: string
-  iconColor: string
-  accentColor?: string
+  title: string;
+  value: string;
+  icon: React.ComponentType<{ className?: string }>;
+  cardBg: string;
+  iconBg: string;
+  iconColor: string;
+  accentColor?: string;
 }
 
 export interface StatusConfig {
-  label: string
-  count: number
-  icon: React.ComponentType<{ className?: string }>
-  bgColor: string
-  textColor: string
-  iconColor: string
+  label: string;
+  count: number;
+  icon: React.ComponentType<{ className?: string }>;
+  bgColor: string;
+  textColor: string;
+  iconColor: string;
 }
 
-export const getRevenueStats = (totalAmount: number, totalDue: number): StatConfig[] => [
+export const getRevenueStats = (
+  totalAmount: number,
+  totalDue: number,
+): StatConfig[] => [
   {
     title: "Total Revenue",
     value: formatCurrency(totalAmount),
@@ -46,12 +49,12 @@ export const getRevenueStats = (totalAmount: number, totalDue: number): StatConf
     iconColor: "text-white",
     accentColor: "text-amber-400",
   },
-]
+];
 
 export const getInvoiceStatusData = (
-  paidCount: number, 
-  pendingCount: number, 
-  overdueCount: number
+  paidCount: number,
+  pendingCount: number,
+  overdueCount: number,
 ): StatusConfig[] => [
   {
     label: "Paid",
@@ -77,22 +80,22 @@ export const getInvoiceStatusData = (
     textColor: "text-red-300",
     iconColor: "text-red-400",
   },
-]
+];
 
 export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount)
-}
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
+};
 
 export const calculateDashboardStats = (invoices: SimpleInvoice[]) => {
   return {
     totalInvoices: invoices.length,
     totalAmount: invoices.reduce((sum, inv) => sum + inv.amount, 0),
     totalDue: invoices.reduce((sum, inv) => sum + inv.balance, 0),
-    paidCount: invoices.filter(inv => inv.status === 'paid').length,
-    pendingCount: invoices.filter(inv => inv.status === 'pending').length,
-    overdueCount: invoices.filter(inv => inv.status === 'overdue').length,
-  }
-}
+    paidCount: invoices.filter((inv) => inv.status === "paid").length,
+    pendingCount: invoices.filter((inv) => inv.status === "pending").length,
+    overdueCount: invoices.filter((inv) => inv.status === "overdue").length,
+  };
+};
