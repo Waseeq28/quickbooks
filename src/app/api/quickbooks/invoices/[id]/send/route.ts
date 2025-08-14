@@ -4,9 +4,9 @@ import { requirePermission } from "@/utils/authz-server";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
-  const { id: invoiceId } = params;
+  const { id: invoiceId } = await context.params;
   const { email } = await request.json();
 
   if (!email) {

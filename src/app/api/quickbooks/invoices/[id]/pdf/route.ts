@@ -4,10 +4,10 @@ import { requirePermission } from "@/utils/authz-server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id: invoiceId } = params;
+    const { id: invoiceId } = await context.params;
 
     if (!invoiceId) {
       return NextResponse.json(

@@ -7,12 +7,13 @@ import { buildItemResolver } from "@/actions/items";
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const { teamId } = await requirePermission("invoice:delete");
     const qbService = await getQuickBooksServiceForTeam(teamId);
-    const docNumber = params.id;
+    const { id } = await context.params;
+    const docNumber = id;
 
     // Find invoice by DocNumber to obtain QuickBooks Id and SyncToken
     const invoices = await qbService.listInvoices();
@@ -66,12 +67,13 @@ const UpdateInvoiceSchema = z.object({
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const { teamId } = await requirePermission("invoice:update");
     const qbService = await getQuickBooksServiceForTeam(teamId);
-    const docNumber = params.id;
+    const { id } = await context.params;
+    const docNumber = id;
 
     const body = await req.json().catch(() => ({}));
     const parsed = UpdateInvoiceSchema.safeParse(body);

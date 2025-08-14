@@ -65,6 +65,19 @@ export function useInvoiceManagement() {
     }
 
     if (
+      toolInvocation.toolName === "fetchOverdueInvoices" &&
+      "result" in toolInvocation
+    ) {
+      const result = toolInvocation.result as any;
+
+      if (result.success && result.invoices) {
+        setInvoices(result.invoices);
+        setSelectedInvoice(result.invoices[0] || null);
+      }
+      setIsLoadingInvoices(false);
+    }
+
+    if (
       toolInvocation.toolName === "getInvoice" &&
       "result" in toolInvocation
     ) {
