@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerAuthzContext } from "@/utils/authz-server";
-import { DatabaseService } from "@/lib/database";
+import { DatabaseService } from "@/services/quickbooks-connections";
 
 // Disconnect current team's QuickBooks connection (admin only)
 export async function DELETE() {

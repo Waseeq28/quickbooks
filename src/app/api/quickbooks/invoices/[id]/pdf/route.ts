@@ -17,7 +17,7 @@ export async function GET(
     }
 
     // Team-scoped service with RBAC
-    const { teamId } = await requirePermission("invoice:read");
+    const { teamId } = await requirePermission("invoice:download");
     const service = await getQuickBooksServiceForTeam(teamId);
     const pdfBuffer = await service.getInvoicePdf(invoiceId);
 

@@ -17,7 +17,7 @@ export async function POST(
   }
 
   try {
-    const { teamId } = await requirePermission("invoice:read");
+    const { teamId } = await requirePermission("invoice:send");
     const service = await getQuickBooksServiceForTeam(teamId);
     await service.sendInvoicePdf(invoiceId, email);
     return NextResponse.json({
