@@ -5,6 +5,7 @@ import { FileText, User, DollarSign, Calendar } from "lucide-react";
 import { SimpleInvoice } from "@/types/quickbooks";
 import { InvoiceActions } from "./InvoiceActions";
 import { getStatusConfig } from "@/utils/invoice-status";
+import { PermissionGate } from "@/components/providers/AuthzProvider";
 
 interface InvoiceDetailsProps {
   invoice: SimpleInvoice;
@@ -35,14 +36,16 @@ export function InvoiceDetails({
                 </p>
               </div>
             </CardTitle>
-            <span
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-semibold shadow-md ${statusConfig.bgColor} ${statusConfig.textColor} border border-white/10`}
-            >
-              <statusConfig.icon
-                className={`h-4 w-4 ${statusConfig.iconColor}`}
-              />
-              {statusConfig.label.toUpperCase()}
-            </span>
+            <div className="flex items-center gap-2">
+              <span
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-semibold shadow-md ${statusConfig.bgColor} ${statusConfig.textColor} border border-white/10`}
+              >
+                <statusConfig.icon
+                  className={`h-4 w-4 ${statusConfig.iconColor}`}
+                />
+                {statusConfig.label.toUpperCase()}
+              </span>
+            </div>
           </div>
         </CardHeader>
 

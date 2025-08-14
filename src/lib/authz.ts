@@ -9,6 +9,7 @@ export type Action =
   | "member:invite"
   | "invoice:read"
   | "invoice:create"
+  | "invoice:update"
   | "invoice:delete";
 
 const actionsOfRole: Record<TeamRole, Set<Action>> = {
@@ -21,6 +22,7 @@ const actionsOfRole: Record<TeamRole, Set<Action>> = {
     "member:invite",
     "invoice:read",
     "invoice:create",
+    "invoice:update",
     "invoice:delete",
   ]),
   accountant: new Set([
@@ -28,6 +30,7 @@ const actionsOfRole: Record<TeamRole, Set<Action>> = {
     "member:read",
     "invoice:read",
     "invoice:create",
+    "invoice:update",
     "invoice:delete",
   ]),
   viewer: new Set(["team:read", "member:read", "invoice:read"]),

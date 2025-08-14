@@ -10,6 +10,7 @@ import {
   Check,
   AlertTriangle,
   Trash2,
+  Pencil,
 } from "lucide-react";
 import { deleteInvoice } from "@/services/invoices-client";
 import { PermissionGate } from "@/components/providers/AuthzProvider";
@@ -47,7 +48,7 @@ export function InvoiceActions({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: emailToSend }),
-        },
+        }
       );
 
       const result = await response.json();
@@ -78,7 +79,7 @@ export function InvoiceActions({
       const result = await deleteInvoice(invoiceId);
       if (!result.success) {
         throw new Error(
-          result?.details || result?.error || "Failed to delete invoice",
+          result?.details || result?.error || "Failed to delete invoice"
         );
       }
       // Soft UX: reload the page or emit a custom event so parent can refresh list
@@ -137,6 +138,23 @@ export function InvoiceActions({
           <Download className="h-3.5 w-3.5" />
           <span className="text-sm">PDF</span>
         </Button>
+
+        <PermissionGate action={"invoice:update"}>
+          <Button
+            onClick={() => {
+              const evt = new CustomEvent("openEditInvoiceDialog", {
+                detail: { invoiceId },
+              });
+              window.dispatchEvent(evt);
+            }}
+            variant="outline"
+            className="gap-1.5 h-9 bg-accent"
+            size="sm"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            <span className="text-sm">Edit</span>
+          </Button>
+        </PermissionGate>
 
         <PermissionGate action={"invoice:delete"}>
           <Button
