@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail } from "lucide-react";
 import { toast } from "sonner";
+import { createClient } from "@/utils/supabase/client";
 
 interface InviteMemberDialogProps {
   open: boolean;
@@ -30,6 +31,7 @@ export function InviteMemberDialog({
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("Viewer");
   const [isSendingInvite, setIsSendingInvite] = useState(false);
+  const supabase = createClient();
 
   const handleSendInvite = async () => {
     if (!inviteEmail.trim()) {
@@ -45,20 +47,28 @@ export function InviteMemberDialog({
     setIsSendingInvite(true);
 
     try {
-      // Mock invite sending - in real app this would send an email
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
-
-      toast.success("Invitation sent successfully!", {
-        description: `Invitation sent to ${inviteEmail} with ${inviteRole} role`,
+      const res = await fetch("/api/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: inviteEmail.trim(), role: inviteRole }),
       });
-
-      setInviteEmail("");
-      setInviteRole("Viewer");
-      onOpenChange(false);
-      onMemberInvited?.();
-    } catch (error) {
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error("Failed to send invitation", {
+          description: json?.error || "Unexpected error",
+        });
+      } else {
+        toast.success("Invitation sent successfully!", {
+          description: `Invitation sent to ${inviteEmail} with ${inviteRole} role`,
+        });
+        setInviteEmail("");
+        setInviteRole("Viewer");
+        onOpenChange(false);
+        onMemberInvited?.();
+      }
+    } catch (error: any) {
       toast.error("Failed to send invitation", {
-        description: "An unexpected error occurred",
+        description: error?.message || "An unexpected error occurred",
       });
     }
 
