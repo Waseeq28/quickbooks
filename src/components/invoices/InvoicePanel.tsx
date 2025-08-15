@@ -7,6 +7,7 @@ import { SimpleInvoice } from "@/types/quickbooks";
 import { InvoiceList } from "@/components/invoices/InvoiceList";
 import { InvoiceDetails } from "@/components/invoices/InvoiceDetails";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { CreateInvoiceDialog } from "@/components/invoices/CreateInvoiceDialog";
 import { useState } from "react";
 import { PermissionGate } from "@/components/providers/AuthzProvider";
@@ -67,20 +68,15 @@ export function InvoicePanel({
   }, []);
 
   return (
-    <div className="flex flex-col flex-1 bg-background overflow-hidden">
+    <div className="flex flex-col flex-1 bg-background overflow-hidden relative">
       {/* Header */}
-      <div className="relative px-4 py-3 glass-effect border-b border-border/50">
+      <div className="relative px-3 py-2 glass-effect border-b border-border/50">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-violet-600 shadow-md">
-              <Receipt className="h-4 w-4 text-white" />
+          <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center w-6 h-6 rounded-md bg-gradient-to-br from-primary to-purple-500">
+              <Receipt className="h-3 w-3 text-white" />
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-foreground">Invoices</h2>
-              <p className="text-xs text-muted-foreground font-medium">
-                Track and manage billing
-              </p>
-            </div>
+            <h2 className="text-sm font-semibold text-foreground">Invoices</h2>
           </div>
           <div className="flex items-center gap-2">
             <PermissionGate action={"invoice:create"}>
@@ -116,34 +112,50 @@ export function InvoicePanel({
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        <InvoiceList
-          invoices={invoices}
-          selectedInvoice={selectedInvoice}
-          onInvoiceSelect={onInvoiceSelect}
-          isLoading={isLoading}
-          error={error}
-        />
+      {/* Content Area (with loading overlay) */}
+      <div className="relative flex flex-1 overflow-hidden">
+        {isLoading && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm">
+            <LoadingSpinner message="Loading Invoices" size="md" />
+          </div>
+        )}
+        {invoices.length === 0 ? (
+          // Centrally aligned empty state for no invoices
+          <div className="flex-1">
+            <EmptyState
+              title="No Invoices Found"
+              description="Fetch your invoices"
+              icon={Receipt}
+              size="lg"
+            />
+          </div>
+        ) : (
+          <>
+            <InvoiceList
+              invoices={invoices}
+              selectedInvoice={selectedInvoice}
+              onInvoiceSelect={onInvoiceSelect}
+              isLoading={false}
+              error={error}
+            />
 
-        <div className="flex-1 overflow-hidden">
-          <ScrollArea className="h-full">
-            {!isLoading && selectedInvoice ? (
-              <InvoiceDetails
-                invoice={selectedInvoice}
-                onDownloadPdf={handleDownloadPdf}
-              />
-            ) : !isLoading ? (
-              <EmptyState
-                title="No Invoice Selected"
-                description={
-                  invoices.length > 0
-                    ? "Select an invoice to view details"
-                    : "Click refresh to load invoices"
-                }
-              />
-            ) : null}
-          </ScrollArea>
-        </div>
+            <div className="flex-1 overflow-hidden">
+              <ScrollArea className="h-full">
+                {selectedInvoice ? (
+                  <InvoiceDetails
+                    invoice={selectedInvoice}
+                    onDownloadPdf={handleDownloadPdf}
+                  />
+                ) : (
+                  <EmptyState
+                    title="No Invoice Selected"
+                    description="Select an invoice to view details"
+                  />
+                )}
+              </ScrollArea>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Create Invoice Dialog */}

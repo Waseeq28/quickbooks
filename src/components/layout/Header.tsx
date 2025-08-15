@@ -2,59 +2,62 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { FileText, Sparkles } from "lucide-react";
 import { UserMenu } from "../UserMenu";
+import Image from "next/image";
+import { useAuthz } from "@/components/providers/AuthzProvider";
+import { toTitleCaseRole } from "@/lib/authz";
 
 export function Header() {
+  const { role, loading } = useAuthz();
   const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
   useEffect(() => {
-    const getUser = async () => {
+    const load = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      setUser(user);
-      setLoading(false);
+      setUser(user ?? null);
     };
-
-    getUser();
-
+    load();
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
+    } = supabase.auth.onAuthStateChange(() => load());
     return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+  }, [supabase]);
 
   return (
-    <header className="sticky top-0 z-50 w-full glass-effect border-b border-border/50 shadow-lg">
+    <header className="sticky top-0 z-50 w-full glass-effect border-b border-border/50 shadow-lg backdrop-blur-md">
       <div className="px-4 lg:px-6">
-        <div className="flex h-12 items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex h-14 items-center justify-between">
+          <div className="flex items-center gap-1">
             <div className="relative">
-              <div className="absolute inset-0 bg-primary/20 rounded-lg blur-md opacity-60 animate-glow"></div>
-              <div className="relative flex items-center justify-center w-8 h-8 bg-gradient-to-br from-primary to-purple-500 rounded-lg shadow-lg">
-                <FileText className="h-4 w-4 text-white" />
-              </div>
+              {/* QL AI Logo */}
+              <Image
+                src="/new-icon.png"
+                alt="QL AI Logo"
+                width={24}
+                height={24}
+                className="w-10 h-10 rounded-xl shadow-xl"
+              />
             </div>
-            <div>
-              <h1 className="text-base font-bold text-foreground">
-                Invoice Manager
+
+            <div className="space-y-1">
+              <h1 className="text-lg font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                Waldo's AI QuickBooks
               </h1>
-              <p className="text-xs text-muted-foreground font-medium flex items-center gap-1">
-                <Sparkles className="h-3 w-3 text-primary" />
-                AI-Powered QuickBooks
-              </p>
             </div>
           </div>
 
+          {/* Current role for selected team */}
+          <div className="flex items-center justify-center flex-1">
+            <p className="text-xl font-semibold text-primary">
+              {role ? toTitleCaseRole(role) : "Member"}
+            </p>
+          </div>
+
           <div className="flex items-center gap-3">
-            {!loading && user && <UserMenu user={user} />}
+            {user && <UserMenu user={user} />}
           </div>
         </div>
       </div>

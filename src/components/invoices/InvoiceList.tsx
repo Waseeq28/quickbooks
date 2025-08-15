@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Hash, AlertTriangle, FileText } from "lucide-react";
@@ -21,6 +22,36 @@ export function InvoiceList({
   isLoading,
   error,
 }: InvoiceListProps) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!invoices || invoices.length === 0) return;
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    e.preventDefault();
+
+    const currentIndex = selectedInvoice
+      ? invoices.findIndex((inv) => inv.id === selectedInvoice.id)
+      : -1;
+
+    let nextIndex = currentIndex;
+    if (e.key === "ArrowDown") {
+      nextIndex =
+        currentIndex < 0 ? 0 : Math.min(currentIndex + 1, invoices.length - 1);
+    } else if (e.key === "ArrowUp") {
+      nextIndex =
+        currentIndex < 0 ? invoices.length - 1 : Math.max(currentIndex - 1, 0);
+    }
+
+    const next = invoices[nextIndex];
+    if (next) {
+      onInvoiceSelect(next);
+      // Ensure the newly selected invoice is visible
+      const el =
+        typeof document !== "undefined"
+          ? document.getElementById(`invoice-${next.id}`)
+          : null;
+      el?.scrollIntoView({ block: "nearest" });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -37,7 +68,16 @@ export function InvoiceList({
   }
 
   return (
-    <div className="w-72 border-r border-border/50 flex flex-col overflow-hidden bg-surface/30">
+    <div
+      className="w-72 border-r border-border/50 flex flex-col overflow-hidden bg-surface/30"
+      role="listbox"
+      aria-label="Invoices"
+      aria-activedescendant={
+        selectedInvoice ? `invoice-${selectedInvoice.id}` : undefined
+      }
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+    >
       <ScrollArea className="flex-1 h-0">
         <div className="p-2.5 space-y-1.5">
           {error && (
@@ -67,6 +107,7 @@ export function InvoiceList({
 
             return (
               <Card
+                id={`invoice-${invoice.id}`}
                 key={invoice.id}
                 className={`cursor-pointer transition-all duration-200 hover:shadow-lg border border-border/30 ${
                   isSelected
@@ -74,6 +115,9 @@ export function InvoiceList({
                     : "hover:bg-card/50 bg-card/30"
                 }`}
                 onClick={() => onInvoiceSelect(invoice)}
+                role="option"
+                aria-selected={isSelected}
+                tabIndex={-1}
               >
                 <CardContent className="p-3">
                   <div className="flex items-start justify-between mb-1.5">
