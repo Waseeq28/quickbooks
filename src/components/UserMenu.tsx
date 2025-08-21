@@ -150,6 +150,7 @@ export function UserMenu({ user, teamName }: UserMenuProps) {
         onOpenChange={setProfileOpen}
         user={user}
         onUserUpdate={handleUserUpdate}
+        currentTeamName={currentTeamName}
       />
 
       <TeamSettingsDialog
@@ -157,6 +158,7 @@ export function UserMenu({ user, teamName }: UserMenuProps) {
         onOpenChange={setTeamSettingsOpen}
         user={user}
         onTeamUpdate={handleUserUpdate}
+        currentTeamName={currentTeamName}
       />
     </>
   );

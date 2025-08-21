@@ -59,6 +59,7 @@ interface TeamSettingsDialogProps {
     };
   };
   onTeamUpdate?: () => void;
+  currentTeamName?: string;
 }
 
 export function TeamSettingsDialog({
@@ -66,13 +67,16 @@ export function TeamSettingsDialog({
   onOpenChange,
   user,
   onTeamUpdate,
+  currentTeamName,
 }: TeamSettingsDialogProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [currentTeamId, setCurrentTeamId] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [currentTeamName, setCurrentTeamName] = useState("No Team Selected");
+  const [teamDisplayName, setTeamDisplayName] = useState(
+    currentTeamName || "No Team Selected"
+  );
   const [currentTeamRole, setCurrentTeamRole] = useState<
     "admin" | "accountant" | "viewer"
   >("viewer");
@@ -84,55 +88,107 @@ export function TeamSettingsDialog({
   // Load current team and members; listen for team switching events
   useEffect(() => {
     const load = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-      setCurrentUserId(user.id);
+      try {
+        // Add timeout to auth call
+        const authPromise = supabase.auth.getUser();
+        const authTimeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Auth timeout")), 5000)
+        );
 
-      const ctx = await fetchCurrentTeamContext(supabase);
-      setCurrentTeamId(ctx.teamId);
-      if (!ctx.teamId) {
-        setCurrentTeamName("No Team Selected");
+        const {
+          data: { user },
+        } = (await Promise.race([authPromise, authTimeoutPromise])) as any;
+        if (!user) {
+          console.log("TeamSettingsDialog: No user found");
+          return;
+        }
+        setCurrentUserId(user.id);
+
+        // Add timeout to team context fetch
+        const contextPromise = fetchCurrentTeamContext(supabase);
+        const contextTimeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Context timeout")), 5000)
+        );
+
+        const ctx = (await Promise.race([
+          contextPromise,
+          contextTimeoutPromise,
+        ])) as any;
+        setCurrentTeamId(ctx.teamId);
+
+        if (!ctx.teamId) {
+          setTeamDisplayName(currentTeamName || "No Team Selected");
+          setTeamMembers([]);
+          return;
+        }
+
+        const teamName = ctx.teamName || currentTeamName || "Team";
+        setTeamDisplayName(teamName);
+
+        const roleLower = (ctx.currentUserRole || "viewer") as
+          | "admin"
+          | "accountant"
+          | "viewer";
+        setCurrentTeamRole(roleLower);
+        setUserRole(toTitleCaseRole(roleLower));
+
+        // Add timeout to members fetch
+        try {
+          const membersPromise = fetchTeamMembers(supabase, ctx.teamId);
+          const membersTimeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Members timeout")), 5000)
+          );
+
+          const members = (await Promise.race([
+            membersPromise,
+            membersTimeoutPromise,
+          ])) as any;
+          setTeamMembers(
+            members.map((m: any) => ({
+              ...m,
+              role: toTitleCaseRole(m.role as TeamRole),
+            }))
+          );
+        } catch (membersError) {
+          console.log(
+            "TeamSettingsDialog: Failed to load members:",
+            membersError
+          );
+          setTeamMembers([]);
+        }
+
+        // Reset form defaults
+        setTeamName(teamName);
+      } catch (error) {
+        console.log("TeamSettingsDialog: Failed to load team context:", error);
+        setTeamDisplayName(currentTeamName || "No Team Selected");
         setTeamMembers([]);
-        return;
       }
-      setCurrentTeamName(ctx.teamName || "Team");
-      const roleLower = (ctx.currentUserRole || "viewer") as
-        | "admin"
-        | "accountant"
-        | "viewer";
-      setCurrentTeamRole(roleLower);
-      setUserRole(toTitleCaseRole(roleLower));
-
-      const members = await fetchTeamMembers(supabase, ctx.teamId);
-      setTeamMembers(
-        members.map((m) => ({
-          ...m,
-          role: toTitleCaseRole(m.role as TeamRole),
-        }))
-      );
-
-      // Reset form defaults
-      setTeamName(ctx.teamName || "Team");
-      // already set above
     };
 
-    const handleTeamSwitch = () => {
-      load();
-    };
-    const handleTeamCreated = () => {
-      load();
-    };
-    load();
+    if (open) {
+      // Small delay to allow auth state to settle
+      const timeoutId = setTimeout(() => {
+        load();
+      }, 100);
 
-    window.addEventListener("teamSwitched", handleTeamSwitch);
-    window.addEventListener("teamCreated", handleTeamCreated);
-    return () => {
-      window.removeEventListener("teamSwitched", handleTeamSwitch);
-      window.removeEventListener("teamCreated", handleTeamCreated);
-    };
-  }, [supabase]);
+      const handleTeamSwitch = () => {
+        load();
+      };
+      const handleTeamCreated = () => {
+        load();
+      };
+
+      window.addEventListener("teamSwitched", handleTeamSwitch);
+      window.addEventListener("teamCreated", handleTeamCreated);
+
+      return () => {
+        clearTimeout(timeoutId);
+        window.removeEventListener("teamSwitched", handleTeamSwitch);
+        window.removeEventListener("teamCreated", handleTeamCreated);
+      };
+    }
+  }, [supabase, open, currentTeamName]);
 
   // Load QuickBooks connection for current team
   useEffect(() => {
@@ -156,7 +212,7 @@ export function TeamSettingsDialog({
   }, [supabase, currentTeamId]);
 
   // Initialize form fields with current team data
-  const [teamName, setTeamName] = useState(currentTeamName);
+  const [teamName, setTeamName] = useState(currentTeamName || "");
   const [userRole, setUserRole] = useState<string>(
     toTitleCaseRole(currentTeamRole as TeamRole)
   );
@@ -165,16 +221,22 @@ export function TeamSettingsDialog({
     if (!currentTeamId) return;
     setIsLoading(true);
     try {
+      // Add timeout to auth call
+      const authPromise = supabase.auth.getUser();
+      const authTimeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Auth timeout")), 5000)
+      );
+
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = (await Promise.race([authPromise, authTimeoutPromise])) as any;
       if (!user) throw new Error("Not authenticated");
 
       const updates: Array<() => Promise<any>> = [];
 
       // Rename team (admin only)
-      const trimmedName = teamName.trim();
-      if (isAdmin && trimmedName && trimmedName !== currentTeamName) {
+      const trimmedName = teamName?.trim() || "";
+      if (isAdmin && trimmedName && trimmedName !== teamDisplayName) {
         updates.push(async () =>
           updateTeamName(supabase, currentTeamId, trimmedName)
         );
@@ -197,8 +259,8 @@ export function TeamSettingsDialog({
       }
 
       // Refresh local state
-      if (isAdmin && trimmedName && trimmedName !== currentTeamName) {
-        setCurrentTeamName(trimmedName);
+      if (isAdmin && trimmedName && trimmedName !== teamDisplayName) {
+        setTeamDisplayName(trimmedName);
       }
       if (isAdmin && desiredRoleLower !== currentTeamRole) {
         setCurrentTeamRole(desiredRoleLower);
@@ -220,7 +282,7 @@ export function TeamSettingsDialog({
   };
 
   const handleCancel = () => {
-    setTeamName(currentTeamName);
+    setTeamName(teamDisplayName);
     setUserRole(toTitleCaseRole(currentTeamRole as TeamRole));
     setIsEditing(false);
   };
@@ -235,9 +297,9 @@ export function TeamSettingsDialog({
         <DialogContent className="sm:max-w-lg border-2 border-gray-800">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {currentTeamName === "No Team Selected"
+              {teamDisplayName === "No Team Selected"
                 ? "Team Settings"
-                : currentTeamName}
+                : teamDisplayName}
             </DialogTitle>
             <DialogDescription>
               Manage your team information and member details.
@@ -259,9 +321,9 @@ export function TeamSettingsDialog({
                     onChange={(e) => setTeamName(e.target.value)}
                     disabled={!isEditing || !can("team:update")}
                     placeholder={
-                      currentTeamName === "No Team Selected"
+                      teamDisplayName === "No Team Selected"
                         ? "Enter team name"
-                        : currentTeamName
+                        : teamDisplayName
                     }
                     className="flex-1"
                   />
@@ -523,7 +585,7 @@ export function TeamSettingsDialog({
       <InviteMemberDialog
         open={showInviteDialog}
         onOpenChange={setShowInviteDialog}
-        teamName={currentTeamName}
+        teamName={teamDisplayName}
         onMemberInvited={() => {
           toast.success("Team member invited successfully!");
         }}

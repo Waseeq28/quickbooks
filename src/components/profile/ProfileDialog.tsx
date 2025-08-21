@@ -43,6 +43,7 @@ interface ProfileDialogProps {
     };
   };
   onUserUpdate?: () => void;
+  currentTeamName?: string;
 }
 
 export function ProfileDialog({
@@ -50,6 +51,7 @@ export function ProfileDialog({
   onOpenChange,
   user,
   onUserUpdate,
+  currentTeamName,
 }: ProfileDialogProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user.user_metadata?.full_name || "");
@@ -63,37 +65,62 @@ export function ProfileDialog({
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await fetchUserTeamsSummary(supabase);
+        // Add timeout to prevent hanging like we did for Header
+        const teamsPromise = fetchUserTeamsSummary(supabase);
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Teams fetch timeout")), 5000)
+        );
+
+        const data = (await Promise.race([
+          teamsPromise,
+          timeoutPromise,
+        ])) as UserTeamSummary[];
         setUserTeams(data);
-      } catch {
+      } catch (error) {
+        console.log("ProfileDialog: Failed to load teams:", error);
         setUserTeams([]);
       }
     };
+
     if (open) {
-      load();
+      // Small delay to allow any auth state to settle
+      const timeoutId = setTimeout(() => {
+        load();
+      }, 100);
+
+      const handleTeamSwitch = () => {
+        load();
+      };
+      const handleTeamCreated = () => {
+        load();
+      };
+
+      window.addEventListener("teamSwitched", handleTeamSwitch);
+      window.addEventListener("teamCreated", handleTeamCreated);
+
+      return () => {
+        clearTimeout(timeoutId);
+        window.removeEventListener("teamSwitched", handleTeamSwitch);
+        window.removeEventListener("teamCreated", handleTeamCreated);
+      };
     }
-
-    const handleTeamSwitch = () => {
-      load();
-    };
-    const handleTeamCreated = () => {
-      load();
-    };
-
-    window.addEventListener("teamSwitched", handleTeamSwitch);
-    window.addEventListener("teamCreated", handleTeamCreated);
-    return () => {
-      window.removeEventListener("teamSwitched", handleTeamSwitch);
-      window.removeEventListener("teamCreated", handleTeamCreated);
-    };
   }, [supabase, open]);
 
   const handleTeamSwitch = async (teamId: string) => {
     try {
+      // Add timeout to auth call
+      const authPromise = supabase.auth.getUser();
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Auth timeout")), 5000)
+      );
+
       const {
         data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      } = (await Promise.race([authPromise, timeoutPromise])) as any;
+      if (!user) {
+        toast.error("Authentication required");
+        return;
+      }
 
       const { error } = await supabase
         .from("profiles")
@@ -106,12 +133,26 @@ export function ProfileDialog({
       }
 
       toast.success("Team switched successfully");
-      const data = await fetchUserTeamsSummary(supabase);
-      setUserTeams(data);
+
+      // Refresh teams list with timeout
+      try {
+        const teamsPromise = fetchUserTeamsSummary(supabase);
+        const teamsTimeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Teams fetch timeout")), 5000)
+        );
+        const data = (await Promise.race([
+          teamsPromise,
+          teamsTimeoutPromise,
+        ])) as UserTeamSummary[];
+        setUserTeams(data);
+      } catch (teamsError) {
+        console.log("Failed to refresh teams list:", teamsError);
+      }
+
       // Notify other components to refresh
       if (typeof window !== "undefined") {
         window.dispatchEvent(
-          new CustomEvent("teamSwitched", { detail: { teamId } }),
+          new CustomEvent("teamSwitched", { detail: { teamId } })
         );
       }
       onUserUpdate?.();
@@ -130,11 +171,20 @@ export function ProfileDialog({
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.updateUser({
+      // Add timeout to updateUser call
+      const updatePromise = supabase.auth.updateUser({
         data: {
           full_name: name,
         },
       });
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Update timeout")), 10000)
+      );
+
+      const { error } = (await Promise.race([
+        updatePromise,
+        timeoutPromise,
+      ])) as any;
 
       if (error) {
         toast.error("Failed to save changes", {
@@ -146,9 +196,9 @@ export function ProfileDialog({
         // Notify parent component to refresh user data
         onUserUpdate?.();
       }
-    } catch (error) {
+    } catch (error: any) {
       toast.error("Failed to save changes", {
-        description: "An unexpected error occurred",
+        description: error?.message || "An unexpected error occurred",
       });
     }
 
