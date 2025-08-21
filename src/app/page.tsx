@@ -18,7 +18,7 @@ export default async function InvoiceManagement() {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (user && authzContext.teamId) {
+    if (user && authzContext.teamId && user.email) {
       // Get team name for display
       const { data: team } = await supabase
         .from("teams")
