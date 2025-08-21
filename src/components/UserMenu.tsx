@@ -15,8 +15,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ProfileDialog } from "@/components/profile";
 import { TeamSettingsDialog } from "@/components/teams";
 import { toast } from "sonner";
-// Supabase-backed current team name will be loaded dynamically
-import { useEffect } from "react";
 import { LogOut, User, Building2, ChevronDown } from "lucide-react";
 
 interface UserMenuProps {
@@ -29,109 +27,36 @@ interface UserMenuProps {
       role?: string;
     };
   };
+  teamName?: string;
 }
 
-export function UserMenu({ user }: UserMenuProps) {
-  console.log("🔍 [UserMenu] Component rendering with user:", user?.email);
-
+export function UserMenu({ user, teamName }: UserMenuProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [teamSettingsOpen, setTeamSettingsOpen] = useState(false);
-  const [currentTeamName, setCurrentTeamName] = useState("No Team Selected");
   const router = useRouter();
-  const supabase = createClient();
 
-  // Load current team name and refresh on team events
-  useEffect(() => {
-    console.log("🔍 [UserMenu] useEffect starting - loading team data...");
-
-    const load = async () => {
-      console.log("🔍 [UserMenu] Getting user from auth...");
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      console.log(
-        "🔍 [UserMenu] Auth result:",
-        user ? `User ID: ${user.id}` : "No user"
-      );
-
-      if (!user) {
-        console.log("❌ [UserMenu] No user, setting 'No Team Selected'");
-        setCurrentTeamName("No Team Selected");
-        return;
-      }
-
-      console.log("🔍 [UserMenu] Fetching profile and team data...");
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("current_team_id, team:current_team_id(name)")
-        .eq("id", user.id)
-        .single();
-
-      console.log("🔍 [UserMenu] Profile query result:", { data, error });
-
-      if (error) {
-        console.log(
-          "❌ [UserMenu] Profile error:",
-          error,
-          "setting 'No Team Selected'"
-        );
-        setCurrentTeamName("No Team Selected");
-        return;
-      }
-      // @ts-expect-error - PostgREST nested select alias
-      const name = data?.team?.name as string | undefined;
-      console.log("🔍 [UserMenu] Team name extracted:", name);
-      setCurrentTeamName(name || "No Team Selected");
-    };
-
-    load().catch((err) => {
-      console.log("❌ [UserMenu] Load function failed:", err);
-      setCurrentTeamName("No Team Selected");
-    });
-
-    const handleTeamSwitch = () => {
-      load();
-    };
-    const handleTeamCreated = () => {
-      load();
-    };
-    window.addEventListener("teamSwitched", handleTeamSwitch);
-    window.addEventListener("teamCreated", handleTeamCreated);
-    return () => {
-      window.removeEventListener("teamSwitched", handleTeamSwitch);
-      window.removeEventListener("teamCreated", handleTeamCreated);
-    };
-  }, [supabase]);
+  const currentTeamName = teamName || "No Team Selected";
 
   const handleUserUpdate = async () => {
-    // Refresh from DB
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setCurrentTeamName("No Team Selected");
-      return;
-    }
-    const { data } = await supabase
-      .from("profiles")
-      .select("current_team_id, team:current_team_id(name)")
-      .eq("id", user.id)
-      .single();
-    // @ts-expect-error - PostgREST nested select alias
-    const name = data?.team?.name as string | undefined;
-    setCurrentTeamName(name || "No Team Selected");
+    // For now, just refresh the page to get updated server-side data
+    window.location.reload();
   };
 
   const handleSignOut = async () => {
     setIsLoading(true);
 
-    const { error } = await supabase.auth.signOut();
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signOut();
 
-    if (error) {
-      handleSignOutError(error.message);
-    } else {
-      handleSignOutSuccess();
+      if (error) {
+        handleSignOutError(error.message);
+      } else {
+        handleSignOutSuccess();
+      }
+    } catch (err) {
+      handleSignOutError("Sign out failed");
     }
 
     setIsLoading(false);
