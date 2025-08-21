@@ -34,6 +34,10 @@ import {
   removeTeamMember,
   updateTeamMemberRole,
 } from "@/services/teams";
+import type {
+  ServerCurrentTeamContext,
+  ServerTeamMember,
+} from "@/services/teams-server";
 import { useAuthz } from "@/components/providers/AuthzProvider";
 import { toTitleCaseRole, type TeamRole } from "@/lib/authz";
 import { InviteMemberDialog } from "./InviteMemberDialog";
@@ -60,6 +64,9 @@ interface TeamSettingsDialogProps {
   };
   onTeamUpdate?: () => void;
   currentTeamName?: string;
+  initialTeamContext?: ServerCurrentTeamContext | null;
+  initialTeamMembers?: ServerTeamMember[];
+  initialQbConnected?: boolean;
 }
 
 export function TeamSettingsDialog({
@@ -68,153 +75,110 @@ export function TeamSettingsDialog({
   user,
   onTeamUpdate,
   currentTeamName,
+  initialTeamContext,
+  initialTeamMembers = [],
+  initialQbConnected = false,
 }: TeamSettingsDialogProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [currentTeamId, setCurrentTeamId] = useState<string | null>(null);
+  const [currentTeamId, setCurrentTeamId] = useState<string | null>(
+    initialTeamContext?.teamId || null
+  );
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [teamDisplayName, setTeamDisplayName] = useState(
-    currentTeamName || "No Team Selected"
+    initialTeamContext?.teamName || currentTeamName || "No Team Selected"
   );
   const [currentTeamRole, setCurrentTeamRole] = useState<
     "admin" | "accountant" | "viewer"
-  >("viewer");
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  >(initialTeamContext?.currentUserRole || "viewer");
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(
+    initialTeamMembers.map((m) => ({
+      ...m,
+      role: toTitleCaseRole(m.role as TeamRole),
+    }))
+  );
   const supabase = createClient();
   const { can, isAdmin } = useAuthz();
-  const [isQbConnected, setIsQbConnected] = useState<boolean>(false);
+  const [isQbConnected, setIsQbConnected] =
+    useState<boolean>(initialQbConnected);
 
-  // Load current team and members; listen for team switching events
+  // Update state when initial data changes
   useEffect(() => {
-    const load = async () => {
+    if (initialTeamContext) {
+      setCurrentTeamId(initialTeamContext.teamId);
+      setTeamDisplayName(initialTeamContext.teamName || "No Team Selected");
+      setCurrentTeamRole(initialTeamContext.currentUserRole || "viewer");
+      setTeamName(initialTeamContext.teamName || "");
+      setUserRole(
+        toTitleCaseRole(
+          (initialTeamContext.currentUserRole || "viewer") as TeamRole
+        )
+      );
+    }
+    setTeamMembers(
+      initialTeamMembers.map((m) => ({
+        ...m,
+        role: toTitleCaseRole(m.role as TeamRole),
+      }))
+    );
+    setIsQbConnected(initialQbConnected);
+  }, [initialTeamContext, initialTeamMembers, initialQbConnected]);
+
+  // Get current user ID for auth operations
+  useEffect(() => {
+    if (!open) return;
+
+    const getCurrentUser = async () => {
       try {
-        // Add timeout to auth call
         const authPromise = supabase.auth.getUser();
-        const authTimeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Auth timeout")), 5000)
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Auth timeout")), 3000)
         );
 
         const {
           data: { user },
-        } = (await Promise.race([authPromise, authTimeoutPromise])) as any;
-        if (!user) {
-          console.log("TeamSettingsDialog: No user found");
-          return;
+        } = (await Promise.race([authPromise, timeoutPromise])) as any;
+        if (user) {
+          setCurrentUserId(user.id);
         }
-        setCurrentUserId(user.id);
-
-        // Add timeout to team context fetch
-        const contextPromise = fetchCurrentTeamContext(supabase);
-        const contextTimeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Context timeout")), 5000)
-        );
-
-        const ctx = (await Promise.race([
-          contextPromise,
-          contextTimeoutPromise,
-        ])) as any;
-        setCurrentTeamId(ctx.teamId);
-
-        if (!ctx.teamId) {
-          setTeamDisplayName(currentTeamName || "No Team Selected");
-          setTeamMembers([]);
-          return;
-        }
-
-        const teamName = ctx.teamName || currentTeamName || "Team";
-        setTeamDisplayName(teamName);
-
-        const roleLower = (ctx.currentUserRole || "viewer") as
-          | "admin"
-          | "accountant"
-          | "viewer";
-        setCurrentTeamRole(roleLower);
-        setUserRole(toTitleCaseRole(roleLower));
-
-        // Add timeout to members fetch
-        try {
-          const membersPromise = fetchTeamMembers(supabase, ctx.teamId);
-          const membersTimeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Members timeout")), 5000)
-          );
-
-          const members = (await Promise.race([
-            membersPromise,
-            membersTimeoutPromise,
-          ])) as any;
-          setTeamMembers(
-            members.map((m: any) => ({
-              ...m,
-              role: toTitleCaseRole(m.role as TeamRole),
-            }))
-          );
-        } catch (membersError) {
-          console.log(
-            "TeamSettingsDialog: Failed to load members:",
-            membersError
-          );
-          setTeamMembers([]);
-        }
-
-        // Reset form defaults
-        setTeamName(teamName);
       } catch (error) {
-        console.log("TeamSettingsDialog: Failed to load team context:", error);
-        setTeamDisplayName(currentTeamName || "No Team Selected");
-        setTeamMembers([]);
+        console.log(
+          "TeamSettingsDialog: Failed to get current user, keeping existing state"
+        );
       }
     };
 
-    if (open) {
-      // Small delay to allow auth state to settle
-      const timeoutId = setTimeout(() => {
-        load();
-      }, 100);
+    getCurrentUser();
 
-      const handleTeamSwitch = () => {
-        load();
-      };
-      const handleTeamCreated = () => {
-        load();
-      };
-
-      window.addEventListener("teamSwitched", handleTeamSwitch);
-      window.addEventListener("teamCreated", handleTeamCreated);
-
-      return () => {
-        clearTimeout(timeoutId);
-        window.removeEventListener("teamSwitched", handleTeamSwitch);
-        window.removeEventListener("teamCreated", handleTeamCreated);
-      };
-    }
-  }, [supabase, open, currentTeamName]);
-
-  // Load QuickBooks connection for current team
-  useEffect(() => {
-    const loadConn = async () => {
-      if (!currentTeamId) {
-        setIsQbConnected(false);
-        return;
-      }
-      const { data, error } = await supabase
-        .from("quickbooks_connections")
-        .select("realm_id, expires_at")
-        .eq("team_id", currentTeamId)
-        .single();
-      if (error) {
-        setIsQbConnected(false);
-        return;
-      }
-      setIsQbConnected(!!data);
+    // Listen for team events only
+    const handleTeamSwitch = () => {
+      // On team switch, the page will refetch server-side data and update props
+      console.log("Team switched, waiting for new props...");
     };
-    loadConn();
-  }, [supabase, currentTeamId]);
+    const handleTeamCreated = () => {
+      console.log("Team created, waiting for new props...");
+    };
+
+    window.addEventListener("teamSwitched", handleTeamSwitch);
+    window.addEventListener("teamCreated", handleTeamCreated);
+
+    return () => {
+      window.removeEventListener("teamSwitched", handleTeamSwitch);
+      window.removeEventListener("teamCreated", handleTeamCreated);
+    };
+  }, [supabase, open]);
+
+  // QuickBooks connection is now handled via initialQbConnected prop
 
   // Initialize form fields with current team data
-  const [teamName, setTeamName] = useState(currentTeamName || "");
+  const [teamName, setTeamName] = useState(
+    initialTeamContext?.teamName || currentTeamName || ""
+  );
   const [userRole, setUserRole] = useState<string>(
-    toTitleCaseRole(currentTeamRole as TeamRole)
+    toTitleCaseRole(
+      (initialTeamContext?.currentUserRole || "viewer") as TeamRole
+    )
   );
 
   const handleSave = async () => {

@@ -16,6 +16,18 @@ import { ProfileDialog } from "@/components/profile";
 import { TeamSettingsDialog } from "@/components/teams";
 import { toast } from "sonner";
 import { LogOut, User, Building2, ChevronDown } from "lucide-react";
+import type {
+  ServerUserTeamSummary,
+  ServerCurrentTeamContext,
+  ServerTeamMember,
+} from "@/services/teams-server";
+
+type DialogData = {
+  userTeams: ServerUserTeamSummary[] | null;
+  teamContext: ServerCurrentTeamContext | null;
+  teamMembers: ServerTeamMember[] | null;
+  isQbConnected: boolean;
+};
 
 interface UserMenuProps {
   user: {
@@ -28,9 +40,10 @@ interface UserMenuProps {
     };
   };
   teamName?: string;
+  dialogData?: DialogData;
 }
 
-export function UserMenu({ user, teamName }: UserMenuProps) {
+export function UserMenu({ user, teamName, dialogData }: UserMenuProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [teamSettingsOpen, setTeamSettingsOpen] = useState(false);
@@ -151,6 +164,7 @@ export function UserMenu({ user, teamName }: UserMenuProps) {
         user={user}
         onUserUpdate={handleUserUpdate}
         currentTeamName={currentTeamName}
+        initialUserTeams={dialogData?.userTeams || []}
       />
 
       <TeamSettingsDialog
@@ -159,6 +173,9 @@ export function UserMenu({ user, teamName }: UserMenuProps) {
         user={user}
         onTeamUpdate={handleUserUpdate}
         currentTeamName={currentTeamName}
+        initialTeamContext={dialogData?.teamContext}
+        initialTeamMembers={dialogData?.teamMembers || []}
+        initialQbConnected={dialogData?.isQbConnected || false}
       />
     </>
   );
