@@ -32,6 +32,8 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ user }: UserMenuProps) {
+  console.log("🔍 [UserMenu] Component rendering with user:", user?.email);
+
   const [isLoading, setIsLoading] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [teamSettingsOpen, setTeamSettingsOpen] = useState(false);
@@ -41,29 +43,52 @@ export function UserMenu({ user }: UserMenuProps) {
 
   // Load current team name and refresh on team events
   useEffect(() => {
+    console.log("🔍 [UserMenu] useEffect starting - loading team data...");
+
     const load = async () => {
+      console.log("🔍 [UserMenu] Getting user from auth...");
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      console.log(
+        "🔍 [UserMenu] Auth result:",
+        user ? `User ID: ${user.id}` : "No user"
+      );
+
       if (!user) {
+        console.log("❌ [UserMenu] No user, setting 'No Team Selected'");
         setCurrentTeamName("No Team Selected");
         return;
       }
+
+      console.log("🔍 [UserMenu] Fetching profile and team data...");
       const { data, error } = await supabase
         .from("profiles")
         .select("current_team_id, team:current_team_id(name)")
         .eq("id", user.id)
         .single();
+
+      console.log("🔍 [UserMenu] Profile query result:", { data, error });
+
       if (error) {
+        console.log(
+          "❌ [UserMenu] Profile error:",
+          error,
+          "setting 'No Team Selected'"
+        );
         setCurrentTeamName("No Team Selected");
         return;
       }
       // @ts-expect-error - PostgREST nested select alias
       const name = data?.team?.name as string | undefined;
+      console.log("🔍 [UserMenu] Team name extracted:", name);
       setCurrentTeamName(name || "No Team Selected");
     };
 
-    load();
+    load().catch((err) => {
+      console.log("❌ [UserMenu] Load function failed:", err);
+      setCurrentTeamName("No Team Selected");
+    });
 
     const handleTeamSwitch = () => {
       load();

@@ -12,17 +12,46 @@ export function Header() {
   const [user, setUser] = useState<any>(null);
   const supabase = createClient();
 
+  console.log(
+    "🔍 [Header] Component rendering. User state:",
+    user ? `${user.email} (ID: ${user.id})` : "null"
+  );
+
   useEffect(() => {
+    console.log("🔍 [Header] useEffect starting - loading user...");
+
     const load = async () => {
+      console.log("🔍 [Header] Getting user from auth...");
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      console.log(
+        "🔍 [Header] Auth result:",
+        user ? `User ID: ${user.id}, Email: ${user.email}` : "No user"
+      );
       setUser(user ?? null);
+      console.log(
+        "🔍 [Header] User state set to:",
+        user ? "user object" : "null"
+      );
     };
-    load();
+
+    load().catch((err) => {
+      console.log("❌ [Header] Load function failed:", err);
+      setUser(null);
+    });
+
+    console.log("🔍 [Header] Setting up auth state change listener...");
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => load());
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log(
+        "🔍 [Header] Auth state changed:",
+        event,
+        session?.user ? `User: ${session.user.email}` : "No user"
+      );
+      load();
+    });
     return () => subscription.unsubscribe();
   }, [supabase]);
 
@@ -57,7 +86,13 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-3">
-            {user && <UserMenu user={user} />}
+            {(() => {
+              console.log(
+                "🔍 [Header] Conditional render check. User exists:",
+                !!user
+              );
+              return user && <UserMenu user={user} />;
+            })()}
           </div>
         </div>
       </div>
