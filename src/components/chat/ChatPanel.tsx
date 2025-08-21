@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Send, Bot, User, FileText, Zap, TrendingUp } from "lucide-react";
+import { Send, Bot, FileText, Zap, TrendingUp } from "lucide-react";
 import type { UIMessage } from "ai";
 
 interface ChatPanelProps {
@@ -31,7 +31,7 @@ export function ChatPanel({
   useEffect(() => {
     if (scrollAreaRef.current) {
       const scrollContainer = scrollAreaRef.current.querySelector(
-        "[data-radix-scroll-area-viewport]",
+        "[data-radix-scroll-area-viewport]"
       );
       if (scrollContainer) {
         scrollContainer.scrollTop = scrollContainer.scrollHeight;
@@ -139,12 +139,6 @@ export function ChatPanel({
                         : JSON.stringify(message.content)}
                     </p>
                   </div>
-
-                  {message.role === "user" && (
-                    <div className="flex items-start justify-center w-7 h-7 bg-primary/10 rounded-lg flex-shrink-0 mt-1 border border-primary/20">
-                      <User className="h-3.5 w-3.5 text-primary mt-1.5" />
-                    </div>
-                  )}
                 </div>
               ))}
 
