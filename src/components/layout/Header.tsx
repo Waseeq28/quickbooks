@@ -22,24 +22,37 @@ export function Header() {
 
     const load = async () => {
       console.log("🔍 [Header] Getting user from auth...");
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      console.log(
-        "🔍 [Header] Auth result:",
-        user ? `User ID: ${user.id}, Email: ${user.email}` : "No user"
-      );
-      setUser(user ?? null);
-      console.log(
-        "🔍 [Header] User state set to:",
-        user ? "user object" : "null"
-      );
+
+      try {
+        // Add timeout to prevent hanging
+        const authPromise = supabase.auth.getUser();
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Auth timeout")), 10000)
+        );
+
+        const {
+          data: { user },
+        } = (await Promise.race([authPromise, timeoutPromise])) as any;
+
+        console.log(
+          "🔍 [Header] Auth result:",
+          user ? `User ID: ${user.id}, Email: ${user.email}` : "No user"
+        );
+        setUser(user ?? null);
+        console.log(
+          "🔍 [Header] User state set to:",
+          user ? "user object" : "null"
+        );
+      } catch (err) {
+        console.log("❌ [Header] Auth call failed:", err);
+        setUser(null);
+      }
     };
 
-    load().catch((err) => {
-      console.log("❌ [Header] Load function failed:", err);
-      setUser(null);
-    });
+    // Add small delay to allow session rehydration
+    const timeoutId = setTimeout(() => {
+      load();
+    }, 100);
 
     console.log("🔍 [Header] Setting up auth state change listener...");
     const {
@@ -50,9 +63,17 @@ export function Header() {
         event,
         session?.user ? `User: ${session.user.email}` : "No user"
       );
-      load();
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        setUser(session?.user ?? null);
+      } else if (event === "SIGNED_OUT") {
+        setUser(null);
+      }
     });
-    return () => subscription.unsubscribe();
+
+    return () => {
+      clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
   }, [supabase]);
 
   return (
