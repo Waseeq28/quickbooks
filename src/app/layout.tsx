@@ -29,8 +29,8 @@ export default function RootLayout({
       >
         <AuthzProvider>{children}</AuthzProvider>
         <Toaster />
-        <SpeedInsights />
-        <Analytics />
+        {/* <SpeedInsights /> */}
+        {/* <Analytics /> */}
       </body>
     </html>
   );
