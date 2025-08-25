@@ -42,24 +42,22 @@ export function UserMenu({ user }: UserMenuProps) {
   // Load current team name and refresh on team events
   useEffect(() => {
     const load = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
+      // Use passed-in user instead of re-reading from auth
+      const currentUserId = (user as any)?.id as string | undefined;
+      if (!currentUserId) {
         setCurrentTeamName("No Team Selected");
         return;
       }
       const { data, error } = await supabase
         .from("profiles")
         .select("current_team_id, team:current_team_id(name)")
-        .eq("id", user.id)
+        .eq("id", currentUserId)
         .single();
       if (error) {
         setCurrentTeamName("No Team Selected");
         return;
       }
-      // @ts-expect-error - PostgREST nested select alias
-      const name = data?.team?.name as string | undefined;
+      const name = (data as any)?.team?.name as string | undefined;
       setCurrentTeamName(name || "No Team Selected");
     };
 
@@ -81,20 +79,17 @@ export function UserMenu({ user }: UserMenuProps) {
 
   const handleUserUpdate = async () => {
     // Refresh from DB
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
+    const currentUserId = (user as any)?.id as string | undefined;
+    if (!currentUserId) {
       setCurrentTeamName("No Team Selected");
       return;
     }
     const { data } = await supabase
       .from("profiles")
       .select("current_team_id, team:current_team_id(name)")
-      .eq("id", user.id)
+      .eq("id", currentUserId)
       .single();
-    // @ts-expect-error - PostgREST nested select alias
-    const name = data?.team?.name as string | undefined;
+    const name = (data as any)?.team?.name as string | undefined;
     setCurrentTeamName(name || "No Team Selected");
   };
 

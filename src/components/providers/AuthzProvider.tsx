@@ -11,9 +11,11 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import type { Action, TeamRole } from "@/lib/authz";
 import { canRole } from "@/lib/authz";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 type AuthzContextState = {
   loading: boolean;
+  user: SupabaseUser | null;
   teamId: string | null;
   role: TeamRole | null;
   can: (action: Action) => boolean;
@@ -34,6 +36,7 @@ export function AuthzProvider({
 }) {
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [teamId, setTeamId] = useState<string | null>(initialTeamId);
   const [role, setRole] = useState<TeamRole | null>(initialRole);
 
@@ -43,6 +46,7 @@ export function AuthzProvider({
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      setUser(user ?? null);
       if (!user) {
         setTeamId(null);
         setRole(null);
@@ -90,13 +94,14 @@ export function AuthzProvider({
   const value = useMemo<AuthzContextState>(
     () => ({
       loading,
+      user,
       teamId,
       role,
       can: (action: Action) => canRole(role, action),
       isAdmin: role === "admin",
       refresh,
     }),
-    [loading, teamId, role, refresh],
+    [loading, user, teamId, role, refresh]
   );
 
   return (

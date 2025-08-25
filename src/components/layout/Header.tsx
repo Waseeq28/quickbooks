@@ -1,30 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
+import { useMemo } from "react";
 import { UserMenu } from "../UserMenu";
 import Image from "next/image";
 import { useAuthz } from "@/components/providers/AuthzProvider";
 import { toTitleCaseRole } from "@/lib/authz";
 
 export function Header() {
-  const { role, loading } = useAuthz();
-  const [user, setUser] = useState<any>(null);
-  const supabase = createClient();
-
-  useEffect(() => {
-    const load = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user ?? null);
-    };
-    load();
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => load());
-    return () => subscription.unsubscribe();
-  }, [supabase]);
+  const { role, user } = useAuthz();
+  const safeUser = useMemo(() => user ?? null, [user]);
 
   return (
     <header className="sticky top-0 z-50 w-full glass-effect border-b border-border/50 shadow-lg backdrop-blur-md">
@@ -57,7 +41,7 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-3">
-            {user && <UserMenu user={user} />}
+            {safeUser && <UserMenu user={safeUser} />}
           </div>
         </div>
       </div>
