@@ -54,9 +54,7 @@ export async function GET(request: NextRequest) {
     const state = crypto.randomBytes(16).toString("hex");
 
     const baseUrl = "https://appcenter.intuit.com/connect/oauth2";
-    // New callback path
-    const redirectUri = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/quickbooks/callback`;
-
+    const redirectUri = `${process.env.APP_URL || "http://localhost:3000"}/api/quickbooks/callback`;
     const authUrl = new URL(baseUrl);
     authUrl.searchParams.append("client_id", clientId);
     authUrl.searchParams.append("scope", "com.intuit.quickbooks.accounting");

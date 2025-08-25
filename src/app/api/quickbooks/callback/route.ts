@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
         body: new URLSearchParams({
           grant_type: "authorization_code",
           code,
-          redirect_uri: `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/quickbooks/callback`,
+          redirect_uri: `${process.env.APP_URL || "http://localhost:3000"}/api/quickbooks/callback`,
         }),
       },
     );
