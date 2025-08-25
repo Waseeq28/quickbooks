@@ -1,19 +1,46 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 
-export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get("code");
+export async function GET(request: NextRequest) {
+  const code = request.nextUrl.searchParams.get("code");
   // if "next" is in param, use it as the redirect URL
-  let next = searchParams.get("next") ?? "/";
+  let next = request.nextUrl.searchParams.get("next") ?? "/";
 
   if (!next.startsWith("/")) {
     // if "next" is not a relative URL, use the default
     next = "/";
   }
 
+  // Compute the correct post-auth origin (handles load balancer/preview envs)
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const isLocalEnv = process.env.NODE_ENV === "development";
+  const destOrigin = isLocalEnv
+    ? request.nextUrl.origin
+    : forwardedHost
+      ? `https://${forwardedHost}`
+      : request.nextUrl.origin;
+
+  const redirectUrl = new URL(next, destOrigin);
+  const response = NextResponse.redirect(redirectUrl);
+
   if (code) {
-    const supabase = await createClient();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, options),
+            );
+          },
+        },
+      },
+    );
+
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
@@ -32,20 +59,14 @@ export async function GET(request: Request) {
           { onConflict: "id" },
         );
       }
-      const forwardedHost = request.headers.get("x-forwarded-host"); // original origin before load balancer
-      const isLocalEnv = process.env.NODE_ENV === "development";
 
-      if (isLocalEnv) {
-        // we can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
-        return NextResponse.redirect(`${origin}${next}`);
-      } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`);
-      } else {
-        return NextResponse.redirect(`${origin}${next}`);
-      }
+      return response;
     }
   }
 
   // return the user to login page with error
-  return NextResponse.redirect(`${origin}/login?error=auth_failed`);
+  const errorResponse = NextResponse.redirect(
+    new URL("/login?error=auth_failed", request.nextUrl.origin),
+  );
+  return errorResponse;
 }

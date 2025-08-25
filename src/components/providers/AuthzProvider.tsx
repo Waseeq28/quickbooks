@@ -76,20 +76,26 @@ export function AuthzProvider({
   }, [supabase]);
 
   useEffect(() => {
-    refresh();
+    // Only refresh if we don't have initial data
+    if (initialTeamId === null && initialRole === null) {
+      refresh();
+    }
+
     const onTeamSwitched = () => refresh();
     const onTeamUpdated = () => refresh();
     window.addEventListener("teamSwitched", onTeamSwitched);
     window.addEventListener("teamUpdated", onTeamUpdated);
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(() => refresh());
+
     return () => {
       window.removeEventListener("teamSwitched", onTeamSwitched);
       window.removeEventListener("teamUpdated", onTeamUpdated);
       subscription.unsubscribe();
     };
-  }, [refresh, supabase]);
+  }, [refresh, supabase, initialTeamId, initialRole]);
 
   const value = useMemo<AuthzContextState>(
     () => ({

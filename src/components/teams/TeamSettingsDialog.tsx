@@ -34,6 +34,10 @@ import {
   removeTeamMember,
   updateTeamMemberRole,
 } from "@/services/teams";
+import type {
+  ServerCurrentTeamContext,
+  ServerTeamMember,
+} from "@/services/teams-server";
 import { useAuthz } from "@/components/providers/AuthzProvider";
 import { toTitleCaseRole, type TeamRole } from "@/lib/authz";
 import { InviteMemberDialog } from "./InviteMemberDialog";
@@ -59,6 +63,10 @@ interface TeamSettingsDialogProps {
     };
   };
   onTeamUpdate?: () => void;
+  currentTeamName?: string;
+  initialTeamContext?: ServerCurrentTeamContext | null;
+  initialTeamMembers?: ServerTeamMember[];
+  initialQbConnected?: boolean;
 }
 
 export function TeamSettingsDialog({
@@ -66,115 +74,133 @@ export function TeamSettingsDialog({
   onOpenChange,
   user,
   onTeamUpdate,
+  currentTeamName,
+  initialTeamContext,
+  initialTeamMembers = [],
+  initialQbConnected = false,
 }: TeamSettingsDialogProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [currentTeamId, setCurrentTeamId] = useState<string | null>(null);
+  const [currentTeamId, setCurrentTeamId] = useState<string | null>(
+    initialTeamContext?.teamId || null
+  );
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [currentTeamName, setCurrentTeamName] = useState("No Team Selected");
+  const [teamDisplayName, setTeamDisplayName] = useState(
+    initialTeamContext?.teamName || currentTeamName || "No Team Selected"
+  );
   const [currentTeamRole, setCurrentTeamRole] = useState<
     "admin" | "accountant" | "viewer"
-  >("viewer");
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  >(initialTeamContext?.currentUserRole || "viewer");
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(
+    initialTeamMembers.map((m) => ({
+      ...m,
+      role: toTitleCaseRole(m.role as TeamRole),
+    }))
+  );
   const supabase = createClient();
   const { can, isAdmin } = useAuthz();
-  const [isQbConnected, setIsQbConnected] = useState<boolean>(false);
+  const [isQbConnected, setIsQbConnected] =
+    useState<boolean>(initialQbConnected);
 
-  // Load current team and members; listen for team switching events
+  // Update state when initial data changes
   useEffect(() => {
-    const load = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-      setCurrentUserId(user.id);
-
-      const ctx = await fetchCurrentTeamContext(supabase);
-      setCurrentTeamId(ctx.teamId);
-      if (!ctx.teamId) {
-        setCurrentTeamName("No Team Selected");
-        setTeamMembers([]);
-        return;
-      }
-      setCurrentTeamName(ctx.teamName || "Team");
-      const roleLower = (ctx.currentUserRole || "viewer") as
-        | "admin"
-        | "accountant"
-        | "viewer";
-      setCurrentTeamRole(roleLower);
-      setUserRole(toTitleCaseRole(roleLower));
-
-      const members = await fetchTeamMembers(supabase, ctx.teamId);
-      setTeamMembers(
-        members.map((m) => ({
-          ...m,
-          role: toTitleCaseRole(m.role as TeamRole),
-        }))
+    if (initialTeamContext) {
+      setCurrentTeamId(initialTeamContext.teamId);
+      setTeamDisplayName(initialTeamContext.teamName || "No Team Selected");
+      setCurrentTeamRole(initialTeamContext.currentUserRole || "viewer");
+      setTeamName(initialTeamContext.teamName || "");
+      setUserRole(
+        toTitleCaseRole(
+          (initialTeamContext.currentUserRole || "viewer") as TeamRole
+        )
       );
+    }
+    setTeamMembers(
+      initialTeamMembers.map((m) => ({
+        ...m,
+        role: toTitleCaseRole(m.role as TeamRole),
+      }))
+    );
+    setIsQbConnected(initialQbConnected);
+  }, [initialTeamContext, initialTeamMembers, initialQbConnected]);
 
-      // Reset form defaults
-      setTeamName(ctx.teamName || "Team");
-      // already set above
+  // Get current user ID for auth operations
+  useEffect(() => {
+    if (!open) return;
+
+    const getCurrentUser = async () => {
+      try {
+        const authPromise = supabase.auth.getUser();
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Auth timeout")), 3000)
+        );
+
+        const {
+          data: { user },
+        } = (await Promise.race([authPromise, timeoutPromise])) as any;
+        if (user) {
+          setCurrentUserId(user.id);
+        }
+      } catch (error) {
+        console.log(
+          "TeamSettingsDialog: Failed to get current user, keeping existing state"
+        );
+      }
     };
 
+    getCurrentUser();
+
+    // Listen for team events only
     const handleTeamSwitch = () => {
-      load();
+      // On team switch, the page will refetch server-side data and update props
+      console.log("Team switched, waiting for new props...");
     };
     const handleTeamCreated = () => {
-      load();
+      console.log("Team created, waiting for new props...");
     };
-    load();
 
     window.addEventListener("teamSwitched", handleTeamSwitch);
     window.addEventListener("teamCreated", handleTeamCreated);
+
     return () => {
       window.removeEventListener("teamSwitched", handleTeamSwitch);
       window.removeEventListener("teamCreated", handleTeamCreated);
     };
-  }, [supabase]);
+  }, [supabase, open]);
 
-  // Load QuickBooks connection for current team
-  useEffect(() => {
-    const loadConn = async () => {
-      if (!currentTeamId) {
-        setIsQbConnected(false);
-        return;
-      }
-      const { data, error } = await supabase
-        .from("quickbooks_connections")
-        .select("realm_id, expires_at")
-        .eq("team_id", currentTeamId)
-        .single();
-      if (error) {
-        setIsQbConnected(false);
-        return;
-      }
-      setIsQbConnected(!!data);
-    };
-    loadConn();
-  }, [supabase, currentTeamId]);
+  // QuickBooks connection is now handled via initialQbConnected prop
 
   // Initialize form fields with current team data
-  const [teamName, setTeamName] = useState(currentTeamName);
+  const [teamName, setTeamName] = useState(
+    initialTeamContext?.teamName || currentTeamName || ""
+  );
   const [userRole, setUserRole] = useState<string>(
-    toTitleCaseRole(currentTeamRole as TeamRole)
+    toTitleCaseRole(
+      (initialTeamContext?.currentUserRole || "viewer") as TeamRole
+    )
   );
 
   const handleSave = async () => {
     if (!currentTeamId) return;
     setIsLoading(true);
     try {
+      // Add timeout to auth call
+      const authPromise = supabase.auth.getUser();
+      const authTimeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Auth timeout")), 5000)
+      );
+
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = (await Promise.race([authPromise, authTimeoutPromise])) as any;
       if (!user) throw new Error("Not authenticated");
 
       const updates: Array<() => Promise<any>> = [];
 
       // Rename team (admin only)
-      const trimmedName = teamName.trim();
-      if (isAdmin && trimmedName && trimmedName !== currentTeamName) {
+      const trimmedName = teamName?.trim() || "";
+      if (isAdmin && trimmedName && trimmedName !== teamDisplayName) {
         updates.push(async () =>
           updateTeamName(supabase, currentTeamId, trimmedName)
         );
@@ -197,8 +223,8 @@ export function TeamSettingsDialog({
       }
 
       // Refresh local state
-      if (isAdmin && trimmedName && trimmedName !== currentTeamName) {
-        setCurrentTeamName(trimmedName);
+      if (isAdmin && trimmedName && trimmedName !== teamDisplayName) {
+        setTeamDisplayName(trimmedName);
       }
       if (isAdmin && desiredRoleLower !== currentTeamRole) {
         setCurrentTeamRole(desiredRoleLower);
@@ -220,7 +246,7 @@ export function TeamSettingsDialog({
   };
 
   const handleCancel = () => {
-    setTeamName(currentTeamName);
+    setTeamName(teamDisplayName);
     setUserRole(toTitleCaseRole(currentTeamRole as TeamRole));
     setIsEditing(false);
   };
@@ -235,9 +261,9 @@ export function TeamSettingsDialog({
         <DialogContent className="sm:max-w-lg border-2 border-gray-800">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {currentTeamName === "No Team Selected"
+              {teamDisplayName === "No Team Selected"
                 ? "Team Settings"
-                : currentTeamName}
+                : teamDisplayName}
             </DialogTitle>
             <DialogDescription>
               Manage your team information and member details.
@@ -259,9 +285,9 @@ export function TeamSettingsDialog({
                     onChange={(e) => setTeamName(e.target.value)}
                     disabled={!isEditing || !can("team:update")}
                     placeholder={
-                      currentTeamName === "No Team Selected"
+                      teamDisplayName === "No Team Selected"
                         ? "Enter team name"
-                        : currentTeamName
+                        : teamDisplayName
                     }
                     className="flex-1"
                   />
@@ -523,7 +549,7 @@ export function TeamSettingsDialog({
       <InviteMemberDialog
         open={showInviteDialog}
         onOpenChange={setShowInviteDialog}
-        teamName={currentTeamName}
+        teamName={teamDisplayName}
         onMemberInvited={() => {
           toast.success("Team member invited successfully!");
         }}

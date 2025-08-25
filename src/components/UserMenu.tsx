@@ -15,9 +15,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ProfileDialog } from "@/components/profile";
 import { TeamSettingsDialog } from "@/components/teams";
 import { toast } from "sonner";
-// Supabase-backed current team name will be loaded dynamically
-import { useEffect } from "react";
 import { LogOut, User, Building2, ChevronDown } from "lucide-react";
+import type {
+  ServerUserTeamSummary,
+  ServerCurrentTeamContext,
+  ServerTeamMember,
+} from "@/services/teams-server";
+
+type DialogData = {
+  userTeams: ServerUserTeamSummary[] | null;
+  teamContext: ServerCurrentTeamContext | null;
+  teamMembers: ServerTeamMember[] | null;
+  isQbConnected: boolean;
+};
 
 interface UserMenuProps {
   user: {
@@ -29,13 +39,14 @@ interface UserMenuProps {
       role?: string;
     };
   };
+  teamName?: string;
+  dialogData?: DialogData;
 }
 
-export function UserMenu({ user }: UserMenuProps) {
+export function UserMenu({ user, teamName, dialogData }: UserMenuProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [teamSettingsOpen, setTeamSettingsOpen] = useState(false);
-  const [currentTeamName, setCurrentTeamName] = useState("No Team Selected");
   const router = useRouter();
   const supabase = createClient();
 
@@ -61,21 +72,7 @@ export function UserMenu({ user }: UserMenuProps) {
       setCurrentTeamName(name || "No Team Selected");
     };
 
-    load();
-
-    const handleTeamSwitch = () => {
-      load();
-    };
-    const handleTeamCreated = () => {
-      load();
-    };
-    window.addEventListener("teamSwitched", handleTeamSwitch);
-    window.addEventListener("teamCreated", handleTeamCreated);
-    return () => {
-      window.removeEventListener("teamSwitched", handleTeamSwitch);
-      window.removeEventListener("teamCreated", handleTeamCreated);
-    };
-  }, [supabase]);
+  const currentTeamName = teamName || "No Team Selected";
 
   const handleUserUpdate = async () => {
     // Refresh from DB
@@ -96,12 +93,17 @@ export function UserMenu({ user }: UserMenuProps) {
   const handleSignOut = async () => {
     setIsLoading(true);
 
-    const { error } = await supabase.auth.signOut();
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signOut();
 
-    if (error) {
-      handleSignOutError(error.message);
-    } else {
-      handleSignOutSuccess();
+      if (error) {
+        handleSignOutError(error.message);
+      } else {
+        handleSignOutSuccess();
+      }
+    } catch (err) {
+      handleSignOutError("Sign out failed");
     }
 
     setIsLoading(false);
@@ -195,6 +197,8 @@ export function UserMenu({ user }: UserMenuProps) {
         onOpenChange={setProfileOpen}
         user={user}
         onUserUpdate={handleUserUpdate}
+        currentTeamName={currentTeamName}
+        initialUserTeams={dialogData?.userTeams || []}
       />
 
       <TeamSettingsDialog
@@ -202,6 +206,10 @@ export function UserMenu({ user }: UserMenuProps) {
         onOpenChange={setTeamSettingsOpen}
         user={user}
         onTeamUpdate={handleUserUpdate}
+        currentTeamName={currentTeamName}
+        initialTeamContext={dialogData?.teamContext}
+        initialTeamMembers={dialogData?.teamMembers || []}
+        initialQbConnected={dialogData?.isQbConnected || false}
       />
     </>
   );

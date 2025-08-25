@@ -14,6 +14,7 @@ export async function getServerAuthzContext(): Promise<AuthzContext> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  
   if (!user) {
     throw Object.assign(new Error("Not authenticated"), { status: 401 });
   }
@@ -33,6 +34,7 @@ export async function getServerAuthzContext(): Promise<AuthzContext> {
   }
 
   const teamId = profile?.current_team_id as string | null;
+  
   if (!teamId) {
     throw Object.assign(new Error("No team selected"), { status: 400 });
   }

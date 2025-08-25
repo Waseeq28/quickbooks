@@ -3,13 +3,32 @@
 import { useMemo } from "react";
 import { UserMenu } from "../UserMenu";
 import Image from "next/image";
-import { useAuthz } from "@/components/providers/AuthzProvider";
 import { toTitleCaseRole } from "@/lib/authz";
+import type { TeamRole } from "@/lib/authz";
+import type {
+  ServerUserTeamSummary,
+  ServerCurrentTeamContext,
+  ServerTeamMember,
+} from "@/services/teams-server";
 
 export function Header() {
   const { role, user } = useAuthz();
   const safeUser = useMemo(() => user ?? null, [user]);
 
+type DialogData = {
+  userTeams: ServerUserTeamSummary[] | null;
+  teamContext: ServerCurrentTeamContext | null;
+  teamMembers: ServerTeamMember[] | null;
+  isQbConnected: boolean;
+};
+
+interface HeaderProps {
+  initialUser?: UserData;
+  initialAuthz?: AuthzData;
+  dialogData?: DialogData;
+}
+
+export function Header({ initialUser, initialAuthz, dialogData }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 w-full glass-effect border-b border-border/50 shadow-lg backdrop-blur-md">
       <div className="px-4 lg:px-6">
@@ -36,7 +55,9 @@ export function Header() {
           {/* Current role for selected team */}
           <div className="flex items-center justify-center flex-1">
             <p className="text-xl font-semibold text-primary">
-              {role ? toTitleCaseRole(role) : "Member"}
+              {initialAuthz?.role
+                ? toTitleCaseRole(initialAuthz.role)
+                : "Member"}
             </p>
           </div>
 

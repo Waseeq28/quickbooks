@@ -25,6 +25,7 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
 import type { UserTeamSummary } from "@/services/teams";
+import type { ServerUserTeamSummary } from "@/services/teams-server";
 import { fetchUserTeamsSummary } from "@/services/teams";
 import { useEffect } from "react";
 import { CreateTeamDialog } from "@/components/teams";
@@ -43,6 +44,8 @@ interface ProfileDialogProps {
     };
   };
   onUserUpdate?: () => void;
+  currentTeamName?: string;
+  initialUserTeams?: ServerUserTeamSummary[];
 }
 
 export function ProfileDialog({
@@ -50,38 +53,58 @@ export function ProfileDialog({
   onOpenChange,
   user,
   onUserUpdate,
+  currentTeamName,
+  initialUserTeams = [],
 }: ProfileDialogProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user.user_metadata?.full_name || "");
   const [isLoading, setIsLoading] = useState(false);
-  const [userTeams, setUserTeams] = useState<UserTeamSummary[]>([]);
+  const [userTeams, setUserTeams] =
+    useState<ServerUserTeamSummary[]>(initialUserTeams);
   const [createTeamOpen, setCreateTeamOpen] = useState(false);
   const supabase = createClient();
   const { can } = useAuthz();
 
-  // Load teams and listen for team events
+  // Update teams when initial data changes
   useEffect(() => {
-    const load = async () => {
+    setUserTeams(initialUserTeams);
+  }, [initialUserTeams]);
+
+  // Listen for team events and refresh if needed
+  useEffect(() => {
+    if (!open) return;
+
+    const refreshTeams = async () => {
+      // Only refresh if we can make the call, otherwise keep existing data
       try {
-        const data = await fetchUserTeamsSummary(supabase);
+        const teamsPromise = fetchUserTeamsSummary(supabase);
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Teams fetch timeout")), 3000)
+        );
+
+        const data = (await Promise.race([
+          teamsPromise,
+          timeoutPromise,
+        ])) as UserTeamSummary[];
         setUserTeams(data);
-      } catch {
-        setUserTeams([]);
+      } catch (error) {
+        console.log(
+          "ProfileDialog: Failed to refresh teams, keeping existing data"
+        );
+        // Keep existing teams data instead of clearing it
       }
     };
-    if (open) {
-      load();
-    }
 
     const handleTeamSwitch = () => {
-      load();
+      refreshTeams();
     };
     const handleTeamCreated = () => {
-      load();
+      refreshTeams();
     };
 
     window.addEventListener("teamSwitched", handleTeamSwitch);
     window.addEventListener("teamCreated", handleTeamCreated);
+
     return () => {
       window.removeEventListener("teamSwitched", handleTeamSwitch);
       window.removeEventListener("teamCreated", handleTeamCreated);
@@ -90,10 +113,19 @@ export function ProfileDialog({
 
   const handleTeamSwitch = async (teamId: string) => {
     try {
+      // Add timeout to auth call
+      const authPromise = supabase.auth.getUser();
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Auth timeout")), 5000)
+      );
+
       const {
         data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      } = (await Promise.race([authPromise, timeoutPromise])) as any;
+      if (!user) {
+        toast.error("Authentication required");
+        return;
+      }
 
       const { error } = await supabase
         .from("profiles")
@@ -106,12 +138,27 @@ export function ProfileDialog({
       }
 
       toast.success("Team switched successfully");
-      const data = await fetchUserTeamsSummary(supabase);
-      setUserTeams(data);
+
+      // Refresh teams list with timeout
+      try {
+        const teamsPromise = fetchUserTeamsSummary(supabase);
+        const teamsTimeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Teams fetch timeout")), 3000)
+        );
+        const data = (await Promise.race([
+          teamsPromise,
+          teamsTimeoutPromise,
+        ])) as UserTeamSummary[];
+        setUserTeams(data);
+      } catch (teamsError) {
+        console.log("Failed to refresh teams list, keeping existing data");
+        // Keep existing data instead of clearing
+      }
+
       // Notify other components to refresh
       if (typeof window !== "undefined") {
         window.dispatchEvent(
-          new CustomEvent("teamSwitched", { detail: { teamId } }),
+          new CustomEvent("teamSwitched", { detail: { teamId } })
         );
       }
       onUserUpdate?.();
@@ -130,11 +177,20 @@ export function ProfileDialog({
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.updateUser({
+      // Add timeout to updateUser call
+      const updatePromise = supabase.auth.updateUser({
         data: {
           full_name: name,
         },
       });
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Update timeout")), 10000)
+      );
+
+      const { error } = (await Promise.race([
+        updatePromise,
+        timeoutPromise,
+      ])) as any;
 
       if (error) {
         toast.error("Failed to save changes", {
@@ -146,9 +202,9 @@ export function ProfileDialog({
         // Notify parent component to refresh user data
         onUserUpdate?.();
       }
-    } catch (error) {
+    } catch (error: any) {
       toast.error("Failed to save changes", {
-        description: "An unexpected error occurred",
+        description: error?.message || "An unexpected error occurred",
       });
     }
 
@@ -231,59 +287,68 @@ export function ProfileDialog({
               </span>
             </div>
 
-            <div className="space-y-2">
-              {userTeams.map((userTeam) => (
-                <div
-                  key={userTeam.teamId}
-                  className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                    userTeam.isCurrent
-                      ? "bg-primary/10 border-primary/30"
-                      : "bg-background border-border/30 hover:bg-muted/20"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                        userTeam.isCurrent
-                          ? "bg-primary/20 text-primary"
-                          : "bg-secondary/10 text-secondary-foreground"
-                      }`}
-                    >
-                      <Building2 className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-sm">
-                          {userTeam.team.name}
-                        </h4>
-                        {userTeam.isCurrent && (
-                          <span className="px-2 py-0.5 text-xs bg-primary/20 text-primary rounded-full flex items-center gap-1">
-                            <Check className="h-3 w-3" />
-                            Current
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-xs text-muted-foreground">
-                          {userTeam.role} • {userTeam.team.memberCount} members
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {!userTeam.isCurrent && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleTeamSwitch(userTeam.teamId)}
-                        className="text-xs"
+            {/* Scrollable teams container with fixed height */}
+            <div className="max-h-64 overflow-y-auto border border-border/30 rounded-lg p-2 space-y-2">
+              {userTeams
+                .sort((a, b) => {
+                  // Put current team first, maintain original order for others
+                  if (a.isCurrent && !b.isCurrent) return -1;
+                  if (!a.isCurrent && b.isCurrent) return 1;
+                  return 0;
+                })
+                .map((userTeam) => (
+                  <div
+                    key={userTeam.teamId}
+                    className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                      userTeam.isCurrent
+                        ? "bg-primary/10 border-primary/30"
+                        : "bg-background border-border/30 hover:bg-muted/20"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          userTeam.isCurrent
+                            ? "bg-primary/20 text-primary"
+                            : "bg-secondary/10 text-secondary-foreground"
+                        }`}
                       >
-                        Switch
-                      </Button>
-                    )}
+                        <Building2 className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium text-sm">
+                            {userTeam.team.name}
+                          </h4>
+                          {userTeam.isCurrent && (
+                            <span className="px-2 py-0.5 text-xs bg-primary/20 text-primary rounded-full flex items-center gap-1">
+                              <Check className="h-3 w-3" />
+                              Current
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="text-xs text-muted-foreground">
+                            {userTeam.role} • {userTeam.team.memberCount}{" "}
+                            members
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {!userTeam.isCurrent && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleTeamSwitch(userTeam.teamId)}
+                          className="text-xs"
+                        >
+                          Switch
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
 
             <div className="pt-2 border-t border-border/30">
