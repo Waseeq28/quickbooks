@@ -2,7 +2,7 @@
 
 import { SimpleInvoice } from "@/types/quickbooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText } from "lucide-react";
+import { FileTextIcon } from "lucide-react";
 import {
   getRevenueStats,
   getInvoiceStatusData,
@@ -21,7 +21,7 @@ export function Dashboard({ invoices }: DashboardProps) {
   const invoiceStatusData = getInvoiceStatusData(
     stats.paidCount,
     stats.pendingCount,
-    stats.overdueCount,
+    stats.overdueCount
   );
 
   return (
@@ -67,7 +67,9 @@ function StatCard({ stat, index }: StatCardProps) {
       </CardHeader>
       <CardContent className="pb-3">
         <div
-          className={`text-xl font-bold tracking-tight ${stat.accentColor || "text-foreground"}`}
+          className={`text-xl font-bold tracking-tight ${
+            stat.accentColor || "text-foreground"
+          }`}
         >
           {stat.value}
         </div>
@@ -97,7 +99,7 @@ function InvoiceSummaryCard({
           Invoices
         </CardTitle>
         <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 group-hover:scale-110 transition-transform shadow-md">
-          <FileText className="h-5 w-5 text-white" />
+          <FileTextIcon className="h-5 w-5 text-white" />
         </div>
       </CardHeader>
       <CardContent className="space-y-2.5 pb-3">
